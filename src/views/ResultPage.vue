@@ -1,47 +1,352 @@
 <template>
-  <div class="p-10 text-center border mt-10">
-    <h1 class="text-2xl font-bold">내 결과는?</h1>
-    
-    <p class="text-xl mt-4 text-blue-600 font-bold">
-      {{ myResult }}
-    </p>
+  <div class="result-container">
+    <div class="blobs" aria-hidden="true">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+    </div>
 
-    <button @click="saveData" class="mt-4 bg-blue-500 text-white p-2 rounded">
-      결과 저장하기
-    </button>
-    
-    <button @click="loadData" class="mt-4 bg-green-500 text-white p-2 rounded ml-2">
-      결과 불러오기
-    </button>
+    <div v-if="!hasPrefs" class="card no-prefs-card">
+      <span class="warning-emoji">⚠️</span>
+      <h2>아직 성향 테스트를 진행하지 않으셨습니다!</h2>
+      <p class="muted">나의 세부 여행 취향을 분석하고 AI 맞춤 코스를 빌드하려면 먼저 설문을 완료해 주세요.</p>
+      <button @click="goToSurvey" class="btn-retry">🎯 설문지 작성하러 가기</button>
+    </div>
+
+    <div v-else class="card">
+      <header class="result-header">
+        <span class="badge">AI CUSTOM COURSE</span>
+        <h2>✨ AI가 설계한 나만의 서울 맞춤 여행 코스</h2>
+        <p class="muted">당신의 성향 설문 결과를 바탕으로 서울 공공데이터를 융합하여 특별한 하루 코스를 설계했습니다.</p>
+      </header>
+
+      <div v-if="isLoading" class="loading-area">
+        <div class="spinner"></div>
+        <h3>AI 가이드가 최적의 여행 경로를 설계하고 있습니다...</h3>
+        <p class="muted">성향에 딱 맞는 명소, 액티비티, 숙박 및 쇼핑 정보를 조합하는 중입니다.</p>
+      </div>
+
+      <div v-else>
+        <section class="map-section">
+          <LeafletMap :items="aiRecommendedPlaces" />
+        </section>
+
+        <section class="ai-report-card">
+          <h3 class="report-title">🤖 AI 가이드의 맞춤 코스 제안서</h3>
+          <p class="ai-text-content">{{ aiCoursePlan }}</p>
+        </section>
+
+        <section class="places-section">
+          <h3 class="section-title">📌 코스 포함 명소 상세 정보</h3>
+          <div class="places-grid">
+            <article
+              v-for="place in aiRecommendedPlaces"
+              :key="place.id || place.title"
+              class="place-card"
+            >
+              <div class="place-body">
+                <span class="category-tag">{{ getCategoryLabel(place.category) }}</span>
+                <h4 class="place-title">{{ place.title }}</h4>
+                <p class="place-addr" v-if="place.addr1">🚗 주소: {{ place.addr1 }}</p>
+                <p class="place-tel" v-if="place.tel">📞 문의: {{ place.tel }}</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <div class="action-buttons" v-if="!isLoading">
+        <button @click="retry" class="btn-retry">🔄 테스트 다시 하기</button>
+        <button @click="goHome" class="btn-home">🏠 홈으로 가기</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTourStore } from '../stores/tour' //
+import LeafletMap from '../components/LeafletMap.vue' //
 
-const myResult = ref('아직 아무것도 없어요');
+const router = useRouter()
+const tourStore = useTourStore() //
 
-// 저장하는 함수
-const saveData = () => {
-  localStorage.setItem('result', '서울 로컬 맛집 탐방가!');
-  alert('저장 완료!');
-};
+const hasPrefs = ref(false) // 🌟 유효한 설문 결과 존재 여부 상태값
+const isLoading = ref(true)
+const aiCoursePlan = ref('')
+const aiRecommendedPlaces = ref([])
 
-// 불러오는 함수
-const loadData = () => {
-  const data = localStorage.getItem('result');
-  if (data) {
-    myResult.value = data;
-  } else {
-    myResult.value = '저장된 데이터가 없어요!';
+// 카테고리 영문 코드를 한글 라벨로 변환하는 헬퍼 함수
+const getCategoryLabel = (cat) => {
+  const labels = { 
+    attraction: '관광지', 
+    culture: '문화/예술', 
+    festival: '축제/행사', 
+    sports: '레포츠', 
+    accommodation: '숙박', 
+    shopping: '쇼핑' 
   }
-};
+  return labels[cat] || '명소'
+}
+
+// 🌟 유효성 검사 함수: 로컬스토리지에 유저 성향 데이터가 정상적으로 완전히 들어갔는지 검사
+const checkPreferences = () => {
+  try {
+    const rawPrefs = localStorage.getItem('userPreferences')
+    if (!rawPrefs) return false
+
+    const parsed = JSON.parse(rawPrefs)
+    // 질문지에서 사용하는 5개 핵심 답변 항목이 완벽히 존재하는지 체크
+    const requiredKeys = ['waiting', 'vibe', 'energy', 'sns', 'placeType']
+    const isValid = requiredKeys.every(key => parsed[key] && parsed[key].trim() !== '')
+    
+    return isValid
+  } catch (e) {
+    return false
+  }
+}
+
+// 🌟 AI 추천 코스 빌딩 요청 함수
+const generateAICourse = async (userPrefs) => {
+  try {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error('API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.')
+    }
+
+    // OpenAI에 전달할 공공데이터 소스 축소화
+    const tourContext = {
+      attraction: tourStore.tourData.attraction.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
+      culture: tourStore.tourData.culture.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
+      festival: tourStore.tourData.festival.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
+      sports: tourStore.tourData.sports.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
+      accommodation: tourStore.tourData.accommodation.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
+      shopping: tourStore.tourData.shopping.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id }))
+    }
+
+    // OpenAI API Fetch 호출
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `
+              당신은 서울 여행 전문 AI 큐레이터입니다.
+              사용자의 5가지 세부 여행 성향 프로필과 아래 제공되는 [서울 공공데이터 소스]를 지능적으로 매칭 및 융합하여, 완벽한 하루 연계 코스 일정표와 추천 장소 리스트를 JSON 형식으로 정확히 반환해야 합니다.
+
+              [사용자의 여행 성향 프로필]
+              - 맛집 웨이팅 감수 여부: ${userPrefs.waiting} (YES면 인기가 많아 대기가 있어도 확실한 맛집, NO면 쾌적하고 조용한 숨은 강자 선호)
+              - 선호 식도락 분위기: ${userPrefs.vibe} (관광객 맛집 vs 로컬들만 아는 골목 맛집)
+              - 여행 시 활동 에너지량: ${userPrefs.energy} (2만 보 랜드마크 투어면 도보 동선이 풍성하고 알찬 스케줄, 5천 보 쉬엄쉬엄 여행이면 동선을 최소화하고 아늑한 쉼이 공존하는 일정)
+              - SNS 사용 정도: ${userPrefs.sns} (YES면 사진이 화려하고 뷰가 예쁜 포토존 명소 위주, NO면 실속 있고 편안한 전통 장소 중심)
+              - 선호 공간 스타일: ${userPrefs.placeType} (유명 관광지 vs 고즈넉하고 아기자기한 동네)
+
+              [서울 공공데이터 소스]
+              ${JSON.stringify(tourContext)}
+
+              [반환 형식 요구사항]
+              오직 아래의 JSON 구조 한 가지만 반환하세요. 앞뒤에 다른 설명이나 마크다운 코드 블록(\`\`\`json)은 절대로 적지 마세요.
+              {
+                "coursePlan": "AI 가이드가 친절하고 전문적인 어조(~요, ~습니다)로 작성하는 사용자 취향 맞춤형 하루 스케줄(오전-오후-저녁) 연계 스토리 해설",
+                "recommendedPlaces": [
+                  { "id": "데이터에서 엄선한 장소의 id", "title": "선택한 장소의 title", "addr1": "주소", "mapx": "경도(mapx)", "mapy": "위도(mapy)", "tel": "전화번호", "category": "카테고리 영문명(sports/culture/attraction/shopping/accommodation 중 하나)" }
+                ]
+              }
+            `
+          },
+          {
+            role: 'user',
+            content: "나의 성향 데이터를 바탕으로 가장 가치 있고 감동적인 나만의 서울 당일 코스를 설계해 줘."
+          }
+        ]
+      })
+    })
+
+    if (!response.ok) throw new Error('AI 코스 생성 통신에 실패했습니다.')
+
+    const data = await response.json()
+    let cleanText = data.choices[0].message.content.trim()
+    
+    if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/^```json/, '').replace(/```$/, '').trim()
+    }
+    
+    const resultJson = JSON.parse(cleanText)
+    aiCoursePlan.value = resultJson.coursePlan
+    aiRecommendedPlaces.value = resultJson.recommendedPlaces
+
+  } catch (error) {
+    console.error(error)
+    aiCoursePlan.value = "⚠️ 죄송합니다. 여행 설문 결과를 동적으로 융합하는 중 통신 지연이 발생했습니다. 아래에서 기본 추천 명소들을 대신 확인해 보세요!"
+    aiRecommendedPlaces.value = tourStore.tourData.attraction.slice(0, 5) //
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  // 🌟 [검증] 로컬스토리지 분석 결과, 유효하지 않은 비정상 진입이면 추천을 중단하고 예외 차단창을 켭니다.
+  if (checkPreferences()) {
+    hasPrefs.value = true
+    const saved = localStorage.getItem('userPreferences')
+    generateAICourse(JSON.parse(saved))
+  } else {
+    hasPrefs.value = false
+    isLoading.value = false
+  }
+})
+
+// 설문지 페이지로 바로 이동
+const goToSurvey = () => {
+  router.push('/survey')
+}
+
+// 🌟 [리셋 완벽 작동!] 로컬스토리지 기록을 삭제하여 결과창 예외 방어가 즉각 동작하도록 조치하고 설문지로 복귀시킵니다.
+const retry = () => {
+  localStorage.removeItem('userPreferences')
+  router.push('/survey')
+}
+
+const goHome = () => {
+  router.push('/')
+}
 </script>
 
-import { createApp } from 'vue'
-import App from './App.vue'
-import vuetify from './plugins/vuetify' // 이 줄이 있어야 Vuetify가 작동합니다!
+<style scoped>
+.result-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+}
 
-const app = createApp(App)
-app.use(vuetify) // Vuetify를 Vue 앱에 연결하는 핵심 코드입니다.
-app.mount('#app')
+.blobs { position: absolute; inset: 0; pointer-events: none; }
+.blob { position: absolute; filter: blur(36px); opacity: 0.95; transform: translateZ(0); }
+.b1 { width: 360px; height: 360px; left: -80px; top: -60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.4), transparent 40%); }
+.b2 { width: 280px; height: 280px; right: -60px; top: 40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 40%); }
+
+.card {
+  width: 100%;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 14px 40px rgba(24,16,40,0.08);
+  border: 1px solid rgba(155,124,255,0.08);
+  backdrop-filter: blur(6px);
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+/* 설문 미참여자 차단 전용 스타일 */
+.no-prefs-card {
+  padding: 64px 32px;
+}
+.warning-emoji {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.result-header { margin-bottom: 24px; }
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9b7cff;
+  background: rgba(155, 124, 255, 0.08);
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+.result-header h2 { font-size: 26px; font-weight: 700; color: var(--text); margin: 0; }
+.muted { font-size: 13px; color: #736077; margin-top: 8px; }
+
+/* 로딩 영역 */
+.loading-area { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; }
+.spinner { width: 44px; height: 44px; border: 4px solid rgba(155, 124, 255, 0.1); border-top-color: #9b7cff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 지도 레이아웃 */
+.map-section {
+  width: 100%;
+  height: 380px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(24,16,40,0.06);
+  border: 1px solid rgba(155,124,255,0.08);
+  margin-bottom: 28px;
+}
+
+/* AI 제안서 */
+.ai-report-card {
+  background: linear-gradient(135deg, rgba(155, 124, 255, 0.04), rgba(255, 138, 182, 0.04));
+  border-radius: 16px;
+  border: 1px solid rgba(155, 124, 255, 0.12);
+  padding: 22px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+.report-title { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 12px; border-left: 4px solid #9b7cff; padding-left: 8px; }
+.ai-text-content { font-size: 14px; line-height: 1.65; color: #3b3042; white-space: pre-line; }
+
+/* 명소 그리드 */
+.places-section { text-align: left; margin-bottom: 32px; }
+.section-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 16px; border-left: 4px solid #ff8ab6; padding-left: 8px; }
+.places-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .places-grid { display: grid; grid-template-columns: repeat(2, 1fr); } }
+
+.place-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid rgba(20, 14, 30, 0.04);
+  box-shadow: 0 8px 24px rgba(24,16,40,0.04);
+}
+.category-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #9b7cff; background: rgba(155, 124, 255, 0.08); padding: 2px 6px; border-radius: 4px; margin-bottom: 8px; }
+.place-title { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+.place-addr, .place-tel { font-size: 12px; color: #736077; margin: 2px 0; }
+
+/* 버튼 그룹 */
+.action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+.btn-retry {
+  background: linear-gradient(90deg, #9b7cff, #ff8ab6);
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(155, 124, 255, 0.2);
+  transition: transform 200ms ease;
+  margin-top: 16px;
+}
+.btn-retry:hover { transform: translateY(-2px); }
+.btn-home {
+  background: #f3f0f5;
+  color: #4f4255;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 16px;
+}
+.btn-home:hover { background: #e6e1ea; }
+</style>

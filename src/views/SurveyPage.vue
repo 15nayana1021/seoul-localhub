@@ -1,227 +1,215 @@
 <template>
-  <div class="survey-root">
+  <div class="survey-container">
     <div class="blobs" aria-hidden="true">
       <div class="blob b1"></div>
       <div class="blob b2"></div>
-      <div class="blob b3"></div>
     </div>
 
-    <div class="card">
-      <header class="card-head">
-        <h2 class="title">서울 여행 성향 테스트</h2>
-        <p class="subtitle">나에게 딱 맞는 여행지를 찾아보세요</p>
-      </header>
-
-      <div class="progress-wrap" aria-hidden="true">
-        <div class="progress-line">
-          <div class="progress-fill" :style="{ width: ((step + 1) / questions.length) * 100 + '%' }"></div>
-        </div>
-        <div class="progress-text">{{ step + 1 }} / {{ questions.length }}</div>
+    <div v-if="currentStep < questions.length" class="card survey-card">
+      <div class="progress-bar">
+        <div class="progress" :style="{ width: progressPercent + '%' }"></div>
       </div>
+      
+      <span class="q-badge">질문 {{ currentStep + 1 }} / {{ questions.length }}</span>
+      <h3 class="question-text">{{ currentQuestion.text }}</h3>
 
-      <main class="question-area">
-        <h3 class="question">{{ questions[step].q }}</h3>
+      <div class="options-list">
+        <button 
+          v-for="(option, idx) in currentQuestion.options" 
+          :key="idx" 
+          @click="selectOption(currentQuestion.key, option.value)"
+          class="option-btn"
+        >
+          {{ option.text }}
+        </button>
+      </div>
+    </div>
 
-        <div class="options" :class="{ 'two-cols': questions[step].options.length === 2 }">
-          <button
-            v-for="opt in questions[step].options"
-            :key="opt"
-            :aria-pressed="selected === opt"
-            :class="['opt', { selected: selected === opt }]"
-            @click="choose(opt)"
-            :disabled="choosing"
-          >
-            <span class="opt-emoji" v-if="opt === 'YES'">✨</span>
-            <span class="opt-emoji" v-else-if="opt === 'NO'">🪄</span>
-            <span class="opt-text">{{ opt }}</span>
-          </button>
-        </div>
-      </main>
+    <div v-else class="card loading-card">
+      <div class="spinner"></div>
+      <h3>당신의 서울 여행 성향을 분석 중입니다...</h3>
+      <p class="muted">서울의 공공데이터와 매핑하여 최상의 당일치기 코스를 생성하고 있습니다.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // 🌟 [추가] 설문 완료 후 이동을 위한 라우터 로드
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter(); // 🌟 [추가] 라우터 인스턴스 생성
-const step = ref(0);
-const selected = ref(null);
-const choosing = ref(false);
+const router = useRouter()
 
-const answers = reactive({
-  waiting: '',
-  vibe: '',
-  energy: '',
-  sns: '',
-  placeType: ''
-});
-
+// 질문 리스트 정의 (질문 사항 변경 없음)
 const questions = [
-  { key: 'waiting', q: '맛집에 1시간 기다려도 괜찮다?', options: ['YES', 'NO'] },
-  { key: 'vibe', q: '어디를 선호하시나요?', options: ['관광객 맛집', '로컬 맛집'] },
-  { key: 'energy', q: '선호하는 여행 스타일은?', options: ['2만 보 랜드마크 투어', '5천 보 쉬엄쉬엄 여행'] },
-  { key: 'sns', q: '인스타 스토리 10개 이상 올린다?', options: ['YES', 'NO'] },
-  { key: 'placeType', q: '어떤 장소를 더 좋아하시나요?', options: ['유명 관광지', '고즈넉한 동네'] }
-];
+  {
+    key: 'waiting',
+    text: '인기 맛집을 발견했다! 하지만 대기 줄이 엄청나다면?',
+    options: [
+      { text: '줄이 길어도 상관없어! 무조건 대기하고 먹는다 (YES)', value: 'YES' },
+      { text: '기다리는 시간은 아깝다! 한산하고 조용한 근처 맛집을 찾는다 (NO)', value: 'NO' }
+    ]
+  },
+  {
+    key: 'vibe',
+    text: '선호하는 식사 장소나 주변 맛집 분위기는?',
+    options: [
+      { text: 'SNS에서 화제되고 유명 관광객들이 가득한 핫플레이스 맛집', value: '관광객 맛집' },
+      { text: '동네 주민들만 아는 깊고 아기자기한 골목 로컬 맛집', value: '로컬 맛집' }
+    ]
+  },
+  {
+    key: 'energy',
+    text: '이번 여행에서 내가 소화할 수 있는 활동성과 에너지량은?',
+    options: [
+      { text: '2만 보는 기본! 아침부터 저녁까지 꽉 채운 랜드마크 마스터 투어', value: '2만 보 랜드마크 투어' },
+      { text: '체력 아끼며 힐링 위주로! 5천 보 이하로 느리게 쉬엄쉬엄 여행', value: '5천 보 쉬엄쉬엄 여행' }
+    ]
+  },
+  {
+    key: 'sns',
+    text: '여행지를 고를 때 인스타그램이나 SNS 업로드 여부가 중요한가요?',
+    options: [
+      { text: '인생샷 건지는 비주얼 명소나 감성 포토존 위주가 최고! (YES)', value: 'YES' },
+      { text: '사진보다는 장소 고유의 쾌적함과 고요한 실속형 힐링 중심! (NO)', value: 'NO' }
+    ]
+  },
+  {
+    key: 'placeType',
+    text: '내가 좀 더 마음 편하게 다닐 수 있는 공간 스타일은?',
+    options: [
+      { text: '대형 현대식 쇼핑몰이나 복잡하지만 볼거리 많은 초대형 유명 관광지', value: '유명 관광지' },
+      { text: '서정적이고 아기자기한 전통 골목길이나 조용하고 고즈넉한 동네', value: '고즈넉한 동네' }
+    ]
+  }
+]
 
-const persist = () => {
-  try { localStorage.setItem('userPreferences', JSON.stringify(answers)); } catch (e) {}
-};
+const currentStep = ref(0)
+const answers = ref({})
 
-const handleAnswer = (key, value) => {
-  answers[key] = value;
-  persist();
-  if (step.value < questions.length - 1) {
-    step.value = Math.min(step.value + 1, questions.length - 1);
+const currentQuestion = computed(() => questions[currentStep.value])
+const progressPercent = computed(() => (currentStep.value / questions.length) * 100)
+
+const selectOption = (key, value) => {
+  answers.value[key] = value
+  
+  if (currentStep.value < questions.length - 1) {
+    currentStep.value++
   } else {
-    // 🌟 [수정] 마지막 문항 입력 완료 후, 0.3초 딜레이를 두고 결과 페이지(/result)로 부드럽게 이동합니다.
+    currentStep.value++
+    // 🌟 [안전 저장] 선택 완료 즉시 로컬스토리지에 userPreferences 기록
+    localStorage.setItem('userPreferences', JSON.stringify(answers.value))
+    
+    // 분석 효과 애니메이션 연출 후 결과창으로 이동
     setTimeout(() => {
-      router.push('/result');
-    }, 300);
+      router.push('/result')
+    }, 1500)
   }
-};
-
-onMounted(() => {
-  try {
-    const raw = localStorage.getItem('userPreferences');
-    if (raw) {
-      const obj = JSON.parse(raw);
-      Object.keys(answers).forEach(k => { if (obj[k]) answers[k] = obj[k]; });
-    }
-  } catch (e) {}
-  if (step.value < 0 || step.value >= questions.length) step.value = Math.max(0, questions.length - 1);
-  selected.value = answers[questions[step.value].key] || null;
-});
-
-watch(step, (n) => {
-  if (n < 0 || n >= questions.length) {
-    selected.value = null;
-    return;
-  }
-  selected.value = answers[questions[n].key] || null;
-});
-
-const choose = (opt) => {
-  if (choosing.value) return;
-  const current = step.value;
-  const q = questions[current];
-  if (!q) return;
-
-  selected.value = opt;
-  choosing.value = true;
-
-  setTimeout(() => {
-    handleAnswer(q.key, opt);
-    choosing.value = false;
-  }, 180);
-};
+}
 </script>
 
 <style scoped>
-:root {
-  --bg-card: rgba(255,255,255,0.9);
-  --accent-1: #ff8ab6;
-  --accent-2: #9b7cff;
-  --muted: #736077;
-  --text: #241a2c;
-  --glass: rgba(255,255,255,0.6);
-  --shadow-soft: 0 14px 40px rgba(24,16,40,0.08);
-  --radius: 16px;
-  --gap: 22px;
-  --transition: 240ms cubic-bezier(.2,.9,.3,1);
-}
-
-.survey-root{
+.survey-container {
   min-height: 100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:48px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
   background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
-  position:relative;
-  overflow:hidden;
-  font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
-  color:var(--text);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--text);
 }
 
-.blobs { position:absolute; inset:0; pointer-events:none; }
-.blob { position:absolute; filter: blur(36px); opacity:0.95; transform: translateZ(0); }
-.b1 { width:360px; height:360px; left:-80px; top:-60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.45), transparent 40%); }
-.b2 { width:280px; height:280px; right:-60px; top:40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.28), transparent 40%); }
-.b3 { width:220px; height:220px; left:20%; bottom:-80px; background: radial-gradient(circle at 50% 50%, rgba(255,213,174,0.22), transparent 40%); }
+.blobs { position: absolute; inset: 0; pointer-events: none; }
+.blob { position: absolute; filter: blur(36px); opacity: 0.95; }
+.b1 { width: 360px; height: 360px; left: -80px; top: -60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.4), transparent 40%); }
+.b2 { width: 280px; height: 280px; right: -60px; top: 40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 40%); }
 
-.card{
-  width:100%;
-  max-width:760px;
-  background: var(--bg-card);
-  border-radius: calc(var(--radius) + 6px);
+.card {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
   padding: 32px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 14px 40px rgba(24,16,40,0.08);
   border: 1px solid rgba(155,124,255,0.08);
-  backdrop-filter: blur(6px) saturate(1.05);
-  position:relative;
-  z-index:2;
+  backdrop-filter: blur(6px);
+  position: relative;
+  z-index: 2;
 }
 
-.card-head { text-align:center; margin-bottom:18px; }
-.title { font-size:28px; margin:0; letter-spacing:-0.6px; font-weight:700; color:var(--text); }
-.subtitle { margin:8px 0 0; color:var(--muted); font-size:13px; }
-
-.progress-wrap { display:flex; align-items:center; gap:12px; margin:16px 0 18px; }
-.progress-line { flex:1; height:10px; background:linear-gradient(90deg, rgba(17,17,17,0.06), rgba(17,17,17,0.03)); border-radius:999px; overflow:hidden; }
-.progress-fill { height:100%; background: linear-gradient(90deg, var(--accent-2), var(--accent-1)); border-radius:999px; transition: width 320ms cubic-bezier(.2,.9,.3,1); box-shadow:0 6px 18px rgba(155,124,255,0.12); }
-.progress-text { font-size:13px; color:var(--muted); min-width:64px; text-align:right; }
-
-.question-area { margin-top:8px; }
-.question { font-size:20px; margin:0 0 18px; color:var(--text); line-height:1.3; text-align:center; }
-
-.options {
-  display:flex;
-  flex-direction:column;
-  gap:var(--gap);
-  align-items:center;
-  justify-content:center;
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 24px;
 }
-.options.two-cols {
-  flex-direction:row;
-  gap:28px;
-  justify-content:center;
-  flex-wrap:wrap;
+.progress {
+  height: 100%;
+  background: linear-gradient(90deg, #9b7cff, #ff8ab6);
+  transition: width 0.3s ease;
 }
 
-.opt {
-  display:flex;
-  align-items:center;
-  gap:14px;
-  justify-content:center;
-  padding:18px 22px;
-  border-radius:14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,255,0.9));
-  border:1px solid rgba(20,14,30,0.04);
-  box-shadow: 0 10px 26px rgba(24,16,40,0.06);
-  font-weight:600;
-  font-size:16px;
-  color:var(--text);
-  cursor:pointer;
-  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
-  user-select:none;
+.q-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9b7cff;
+  background: rgba(155, 124, 255, 0.08);
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
 }
 
-.opt-emoji { font-size:20px; display:inline-block; transform:translateY(2px); }
-.opt[disabled] { opacity:0.6; pointer-events:none; }
-.opt:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 18px 46px rgba(24,16,40,0.1); }
-.opt.selected {
-  background: linear-gradient(90deg, rgba(155,124,255,0.18), rgba(255,138,182,0.14));
-  border-color: rgba(155,124,255,0.28);
-  box-shadow: 0 22px 56px rgba(155,124,255,0.12);
-  transform: translateY(-8px) scale(1.02);
+.question-text {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0 0 28px;
+  text-align: left;
 }
 
-@media (max-width:760px) {
-  .card { padding:20px; margin:0 12px; }
-  .options.two-cols { flex-direction:column; }
-  .opt { padding:14px; }
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
+.option-btn {
+  background: #ffffff;
+  border: 1px solid rgba(155, 124, 255, 0.12);
+  padding: 16px 20px;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.option-btn:hover {
+  border-color: #9b7cff;
+  background: rgba(155, 124, 255, 0.04);
+  transform: translateY(-2px);
+}
+
+.loading-card {
+  text-align: center;
+  padding: 64px 32px;
+}
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(155, 124, 255, 0.1);
+  border-top-color: #9b7cff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.muted { font-size: 13px; color: #736077; margin-top: 8px; }
 </style>
