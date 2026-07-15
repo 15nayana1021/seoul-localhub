@@ -8,7 +8,7 @@ export const useCommunityStore = defineStore('community', () => {
   // 2. 현재 선택된 카테고리 필터링을 위한 상태 (기본값: 'all')
   const currentCategory = ref('all')
 
-  // 3. 로컬스토리이에 데이터를 안전하게 동기화(저장)하는 내부 헬퍼 함수
+  // 3. 로컬스토리지에 데이터를 안전하게 동기화(저장)하는 내부 헬퍼 함수
   const saveToLocalStorage = () => {
     localStorage.setItem('localhub_posts', JSON.stringify(posts.value))
   }
@@ -31,14 +31,15 @@ export const useCommunityStore = defineStore('community', () => {
     return posts.value.find(post => post.id === id)
   }
 
-  // 6. [작성 - Create] 신규 익명 게시글 등록
-  const createPost = ({ title, content, password, category }) => {
+  // 6. [작성 - Create] 신규 익명 게시글 등록 (🌟 image 매개변수 추가!)
+  const createPost = ({ title, content, password, category, image }) => {
     const newPost = {
       id: Date.now().toString(), // 고유 ID 생성 (타임스탬프 문자열)
       title,
       content,
-      password, // 익명 비밀번호 (RFP 요구에 의해 암호화 없이 저장)
+      password, // 익명 비밀번호
       category,
+      image: image || '', // 🌟 Base64 이미지 텍스트 데이터 보존 추가!
       createdAt: Date.now() // 작성일 타임스탬프
     }
 
@@ -54,8 +55,8 @@ export const useCommunityStore = defineStore('community', () => {
     return post.password === inputPassword
   }
 
-  // 8. [수정 - Update] 비밀번호 검증 후 게시글 수정
-  const updatePost = (id, { title, content, password }) => {
+  // 8. [수정 - Update] 비밀번호 검증 후 게시글 수정 (🌟 image 수정 대응 추가!)
+  const updatePost = (id, { title, content, password, image }) => {
     const postIndex = posts.value.findIndex(p => p.id === id)
     if (postIndex === -1) {
       return { success: false, message: '존재하지 않는 게시글입니다.' }
@@ -70,7 +71,8 @@ export const useCommunityStore = defineStore('community', () => {
     posts.value[postIndex] = {
       ...posts.value[postIndex],
       title,
-      content
+      content,
+      image: image !== undefined ? image : posts.value[postIndex].image // 🌟 이미지 업데이트 반영
     }
 
     saveToLocalStorage()

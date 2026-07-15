@@ -7,6 +7,8 @@ import BoardDetail from '../views/BoardDetail.vue'
 import BoardWrite from '../views/BoardWrite.vue'
 import SurveyPage from '../views/SurveyPage.vue'
 import ResultPage from '../views/ResultPage.vue'
+import SurveyParent from '../views/SurveyParent.vue'
+import SurveyFollowup from '../views/SurveyFollowup.vue'
 
 const routes = [
   {
@@ -36,7 +38,12 @@ const routes = [
   {
     path: '/survey',
     name: 'survey',
-    component: SurveyPage
+    component: SurveyParent
+  },
+  {
+    path: '/survey/followup',
+    name: 'survey-followup',
+    component: SurveyFollowup
   },
   {
     path: '/result',

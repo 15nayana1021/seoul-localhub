@@ -27,7 +27,11 @@
 
       <div v-else>
         <section class="map-section">
-          <LeafletMap :items="aiRecommendedPlaces" />
+          <LeafletMap 
+            :items="aiRecommendedPlaces" 
+            :active-item="selectedItem"
+            @select-item="handleMarkerClick"
+          />
         </section>
 
         <section class="ai-report-card">
@@ -41,7 +45,9 @@
             <article
               v-for="place in aiRecommendedPlaces"
               :key="place.id || place.title"
-              class="place-card"
+              :ref="(el) => setCardRef(el, place.id || place.title)"
+              :class="['place-card', { 'active-neon': selectedItem?.title === place.title }]"
+              @click="focusOnMap(place)"
             >
               <div class="place-body">
                 <span class="category-tag">{{ getCategoryLabel(place.category) }}</span>
@@ -63,20 +69,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive, onBeforeUpdate } from 'vue' 
 import { useRouter } from 'vue-router'
-import { useTourStore } from '../stores/tour' //
-import LeafletMap from '../components/LeafletMap.vue' //
+import { useTourStore } from '../stores/tour' 
+import LeafletMap from '../components/LeafletMap.vue' 
 
 const router = useRouter()
-const tourStore = useTourStore() //
+const tourStore = useTourStore() 
 
-const hasPrefs = ref(false) // 🌟 유효한 설문 결과 존재 여부 상태값
+const hasPrefs = ref(false) 
 const isLoading = ref(true)
 const aiCoursePlan = ref('')
 const aiRecommendedPlaces = ref([])
 
-// 카테고리 영문 코드를 한글 라벨로 변환하는 헬퍼 함수
+// 🌟 양방향 상태 관리를 위한 변수 선언
+const selectedItem = ref(null)
+const cardRefs = reactive(new Map()) 
+
+onBeforeUpdate(() => {
+  cardRefs.clear()
+})
+
+const setCardRef = (el, id) => {
+  if (el) {
+    cardRefs.set(id, el)
+  }
+}
+
 const getCategoryLabel = (cat) => {
   const labels = { 
     attraction: '관광지', 
@@ -89,14 +108,12 @@ const getCategoryLabel = (cat) => {
   return labels[cat] || '명소'
 }
 
-// 🌟 유효성 검사 함수: 로컬스토리지에 유저 성향 데이터가 정상적으로 완전히 들어갔는지 검사
 const checkPreferences = () => {
   try {
     const rawPrefs = localStorage.getItem('userPreferences')
     if (!rawPrefs) return false
 
     const parsed = JSON.parse(rawPrefs)
-    // 질문지에서 사용하는 5개 핵심 답변 항목이 완벽히 존재하는지 체크
     const requiredKeys = ['waiting', 'vibe', 'energy', 'sns', 'placeType']
     const isValid = requiredKeys.every(key => parsed[key] && parsed[key].trim() !== '')
     
@@ -106,7 +123,7 @@ const checkPreferences = () => {
   }
 }
 
-// 🌟 AI 추천 코스 빌딩 요청 함수
+// AI 추천 코스 빌딩 요청
 const generateAICourse = async (userPrefs) => {
   try {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -114,7 +131,15 @@ const generateAICourse = async (userPrefs) => {
       throw new Error('API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.')
     }
 
-    // OpenAI에 전달할 공공데이터 소스 축소화
+    // 🌟 [추가] 1단계 설문에서 로컬스토리지에 저장해둔 기본 여행 정보 꺼내기
+    const rawSurveyData = localStorage.getItem('surveyData') //
+    const surveyData = rawSurveyData ? JSON.parse(rawSurveyData) : { //
+      stayText: '당일치기 여행',
+      ageGroup: '20대',
+      companion: '친구',
+      mbti: 'ENFP'
+    }
+
     const tourContext = {
       attraction: tourStore.tourData.attraction.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
       culture: tourStore.tourData.culture.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
@@ -124,7 +149,6 @@ const generateAICourse = async (userPrefs) => {
       shopping: tourStore.tourData.shopping.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id }))
     }
 
-    // OpenAI API Fetch 호출
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -138,9 +162,12 @@ const generateAICourse = async (userPrefs) => {
             role: 'system',
             content: `
               당신은 서울 여행 전문 AI 큐레이터입니다.
-              사용자의 5가지 세부 여행 성향 프로필과 아래 제공되는 [서울 공공데이터 소스]를 지능적으로 매칭 및 융합하여, 완벽한 하루 연계 코스 일정표와 추천 장소 리스트를 JSON 형식으로 정확히 반환해야 합니다.
+              사용자의 여행 기본 정보와 성향 프로필을 지능적으로 매칭 및 융합하여, 완벽한 연계 코스 일정표와 추천 장소 리스트를 JSON 형식으로 정확히 반환해야 합니다.
 
-              [사용자의 여행 성향 프로필]
+              [사용자의 여행 정보 및 성향]
+              - 여행 일정 요약: ${surveyData.stayText} (이에 맞춰 스케줄 분량을 오전/오후/저녁으로 영리하게 구성해 주세요)
+              - 나이대 및 동행인: ${surveyData.ageGroup}의 동행인 '${surveyData.companion}'과 함께하는 여행입니다. (동행인 분위기에 맞는 장소 배치가 중요합니다)
+              - 사용자의 MBTI: ${surveyData.mbti}
               - 맛집 웨이팅 감수 여부: ${userPrefs.waiting} (YES면 인기가 많아 대기가 있어도 확실한 맛집, NO면 쾌적하고 조용한 숨은 강자 선호)
               - 선호 식도락 분위기: ${userPrefs.vibe} (관광객 맛집 vs 로컬들만 아는 골목 맛집)
               - 여행 시 활동 에너지량: ${userPrefs.energy} (2만 보 랜드마크 투어면 도보 동선이 풍성하고 알찬 스케줄, 5천 보 쉬엄쉬엄 여행이면 동선을 최소화하고 아늑한 쉼이 공존하는 일정)
@@ -162,7 +189,7 @@ const generateAICourse = async (userPrefs) => {
           },
           {
             role: 'user',
-            content: "나의 성향 데이터를 바탕으로 가장 가치 있고 감동적인 나만의 서울 당일 코스를 설계해 줘."
+            content: "나의 여행 정보와 성향 데이터를 바탕으로 가장 가치 있고 감동적인 나만의 서울 일치형 코스를 설계해 줘."
           }
         ]
       })
@@ -184,14 +211,31 @@ const generateAICourse = async (userPrefs) => {
   } catch (error) {
     console.error(error)
     aiCoursePlan.value = "⚠️ 죄송합니다. 여행 설문 결과를 동적으로 융합하는 중 통신 지연이 발생했습니다. 아래에서 기본 추천 명소들을 대신 확인해 보세요!"
-    aiRecommendedPlaces.value = tourStore.tourData.attraction.slice(0, 5) //
+    aiRecommendedPlaces.value = tourStore.tourData.attraction.slice(0, 5) 
   } finally {
     isLoading.value = false
   }
 }
 
+const focusOnMap = (place) => {
+  selectedItem.value = place
+}
+
+const handleMarkerClick = (place) => {
+  selectedItem.value = place
+  
+  const uniqueId = place.id || place.title
+  const targetCard = cardRefs.get(uniqueId)
+  
+  if (targetCard) {
+    targetCard.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    })
+  }
+}
+
 onMounted(() => {
-  // 🌟 [검증] 로컬스토리지 분석 결과, 유효하지 않은 비정상 진입이면 추천을 중단하고 예외 차단창을 켭니다.
   if (checkPreferences()) {
     hasPrefs.value = true
     const saved = localStorage.getItem('userPreferences')
@@ -202,14 +246,14 @@ onMounted(() => {
   }
 })
 
-// 설문지 페이지로 바로 이동
 const goToSurvey = () => {
   router.push('/survey')
 }
 
-// 🌟 [리셋 완벽 작동!] 로컬스토리지 기록을 삭제하여 결과창 예외 방어가 즉각 동작하도록 조치하고 설문지로 복귀시킵니다.
+// 🌟 테스트 다시 하기 클릭 시 두 저장소를 모두 완전히 초기화합니다.
 const retry = () => {
   localStorage.removeItem('userPreferences')
+  localStorage.removeItem('surveyData') // 1단계 정보도 함께 삭제
   router.push('/survey')
 }
 
@@ -251,7 +295,6 @@ const goHome = () => {
   text-align: center;
 }
 
-/* 설문 미참여자 차단 전용 스타일 */
 .no-prefs-card {
   padding: 64px 32px;
 }
@@ -275,12 +318,10 @@ const goHome = () => {
 .result-header h2 { font-size: 26px; font-weight: 700; color: var(--text); margin: 0; }
 .muted { font-size: 13px; color: #736077; margin-top: 8px; }
 
-/* 로딩 영역 */
 .loading-area { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; }
 .spinner { width: 44px; height: 44px; border: 4px solid rgba(155, 124, 255, 0.1); border-top-color: #9b7cff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* 지도 레이아웃 */
 .map-section {
   width: 100%;
   height: 380px;
@@ -291,7 +332,6 @@ const goHome = () => {
   margin-bottom: 28px;
 }
 
-/* AI 제안서 */
 .ai-report-card {
   background: linear-gradient(135deg, rgba(155, 124, 255, 0.04), rgba(255, 138, 182, 0.04));
   border-radius: 16px;
@@ -303,11 +343,10 @@ const goHome = () => {
 .report-title { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 12px; border-left: 4px solid #9b7cff; padding-left: 8px; }
 .ai-text-content { font-size: 14px; line-height: 1.65; color: #3b3042; white-space: pre-line; }
 
-/* 명소 그리드 */
 .places-section { text-align: left; margin-bottom: 32px; }
 .section-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 16px; border-left: 4px solid #ff8ab6; padding-left: 8px; }
 .places-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-@media (min-width: 768px) { .places-grid { display: grid; grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 768px) { .places-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .place-card {
   background: #ffffff;
@@ -315,12 +354,25 @@ const goHome = () => {
   padding: 18px;
   border: 1px solid rgba(20, 14, 30, 0.04);
   box-shadow: 0 8px 24px rgba(24,16,40,0.04);
+  cursor: pointer;
+  transition: all 240ms ease;
 }
+.place-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(155, 124, 255, 0.08);
+}
+
 .category-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #9b7cff; background: rgba(155, 124, 255, 0.08); padding: 2px 6px; border-radius: 4px; margin-bottom: 8px; }
 .place-title { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
 .place-addr, .place-tel { font-size: 12px; color: #736077; margin: 2px 0; }
 
-/* 버튼 그룹 */
+.place-card.active-neon {
+  border-color: #9b7cff !important;
+  box-shadow: 0 0 15px rgba(155, 124, 255, 0.35), 0 4px 20px rgba(155, 124, 255, 0.1) !important;
+  transform: translateY(-4px) scale(1.02);
+  background: linear-gradient(180deg, #ffffff, rgba(155, 124, 255, 0.03)) !important;
+}
+
 .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
 .btn-retry {
   background: linear-gradient(90deg, #9b7cff, #ff8ab6);

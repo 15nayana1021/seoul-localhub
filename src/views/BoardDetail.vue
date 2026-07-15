@@ -15,6 +15,13 @@
     <p>존재하지 않거나 삭제된 게시글입니다.</p>
     <button @click="goBack" class="mt-4 back-btn">목록으로 돌아가기</button>
   </div>
+  <div class="detail-body-wrapper" v-if="post">
+  <div v-if="post.image" class="detail-image-container">
+    <img :src="post.image" alt="첨부 이미지" class="detail-image" />
+  </div>
+
+  <p class="detail-content">{{ post.content }}</p>
+</div>
 </template>
 
 <script setup>
@@ -62,6 +69,20 @@ const handleDelete = () => {
 </script>
 
 <style scoped>
+.detail-image-container {
+  width: 100%;
+  max-height: 400px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+.detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 혹은 어색하게 잘리지 않게 하려면 contain 사용 가능 */
+}
 .detail-card {
   background: #fff;
   border-radius: 14px;
