@@ -65,7 +65,7 @@ export const useChatbotStore = defineStore('chatbot', () => {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini', // 가성비와 속도가 훌륭한 모델 사용
+          model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemContext },
             ...messages.value.map(m => ({ role: m.role, content: m.content }))
