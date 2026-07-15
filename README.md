@@ -63,4 +63,4 @@ seoul-localhub/
     │   └── chatbot.js    # OpenAI 비동기 통신 챗봇 스토어
     ├── views/            # 팀원 A의 퍼블리싱 화면 컴포넌트 폴더
     ├── App.vue           # 최상위 통합 컴포넌트
-    └── main.js           # Vue 애플리케이션 엔트리 파일
+    └── main.js           # Vue 애플리케이션 엔트리 파일ㅎ

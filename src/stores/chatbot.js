@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useTourStore } from './tour' // 👈 우리가 앞서 만든 투어 스토어 로드
+import { useTourStore } from './tour'
 
 export const useChatbotStore = defineStore('chatbot', () => {
   const tourStore = useTourStore()
   
-  // 대화 히스토리 상태 관리
+ 
   const messages = ref([
     {
       role: 'assistant',
@@ -13,14 +13,11 @@ export const useChatbotStore = defineStore('chatbot', () => {
     }
   ])
   
-  // 로딩 상태 (API 호출 중 UI 처리용)
   const isLoading = ref(false)
 
-  // OpenAI API 호출 비동기 함수
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim()) return
     
-    // 1. 사용자 메시지를 화면에 즉시 추가
     messages.value.push({
       role: 'user',
       content: userMessage
@@ -29,7 +26,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
     isLoading.value = true
 
     try {
-      // 2. .env에서 환경변수 API KEY 가져오기
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY
 
       if (!apiKey) {
