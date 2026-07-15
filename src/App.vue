@@ -1,7 +1,66 @@
 <template>
   <div class="p-8 bg-gray-50 min-h-screen">
     <h1 class="text-3xl font-bold text-gray-800 mb-2">LocalHub 종합 기능 테스트 베드 (팀원 B)</h1>
-    <p class="text-gray-500 mb-8">익명 게시판 CRUD와 AI 챗봇 비동기 통신 로직을 통합 검증합니다.</p>
+    <p class="text-gray-500 mb-8">익명 게시판 CRUD, AI 챗봇 비동기 통신, 그리고 Leaflet.js 지도 시각화까지 연동 검증합니다.</p>
+
+    <div class="flex flex-wrap gap-2 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <span class="text-sm font-bold text-gray-400 self-center mr-2">데이터 카테고리:</span>
+      <button 
+        v-for="category in categories" 
+        :key="category.key"
+        @click="tourStore.changeCategory(category.key)"
+        :class="[
+          'px-4 py-2 rounded-lg font-semibold text-xs transition-colors',
+          tourStore.currentCategory === category.key 
+            ? 'bg-blue-600 text-white' 
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
+      >
+        {{ category.name }} ({{ tourStore.tourData[category.key]?.length || 0 }}건)
+      </button>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+      <h2 class="text-xl font-bold text-blue-600 mb-2">📍 서울 {{ getTourCategoryName(tourStore.currentCategory) }} 지도 위치 시각화 (선택 기능)</h2>
+      <p class="text-xs text-gray-400 mb-4">* 위 7대 카테고리 탭을 누르면 상위 5개 데이터가 지도 마커로 찍히고 화면이 이동합니다. 마커를 누르면 상세 정보가 표출됩니다.</p>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 h-[450px]">
+          <LeafletMap 
+            :items="tourStore.currentItems.slice(0, 5)" 
+            @select-item="selectedPlace = $event" 
+          />
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-blue-500 mb-2">🔎 선택한 장소 정보</h3>
+            
+            <div v-if="!selectedPlace" class="text-gray-400 text-sm py-24 text-center">
+              지도에서 마커(핀)를 클릭하시면 상세 정보가 여기에 나타납니다. 🗺️
+            </div>
+
+            <div v-else class="space-y-3">
+              <h4 class="text-lg font-bold text-gray-800">{{ selectedPlace.title }}</h4>
+              <p class="text-xs text-gray-500 bg-white p-2 rounded border leading-relaxed">
+                {{ selectedPlace.addr1 }} {{ selectedPlace.addr2 }}
+              </p>
+              
+              <div v-if="selectedPlace.tel" class="text-xs text-gray-600">
+                📞 문의처: {{ selectedPlace.tel }}
+              </div>
+              
+              <button 
+                @click="askChatbotAboutPlace(selectedPlace.title)"
+                class="w-full mt-4 bg-blue-50 text-blue-600 font-bold py-2 rounded-lg text-xs hover:bg-blue-100 transition-colors"
+              >
+                🤖 이 장소에 대해 AI에게 추천 물어보기
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
       
@@ -142,22 +201,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useCommunityStore } from './stores/community'
-import { useChatbotStore } from './stores/chatbot' // 👈 챗봇 스토어 로드
+import { useChatbotStore } from './stores/chatbot'
+import { useTourStore } from './stores/tour' // 🌟 7대 데이터 스토어 추가 로드
+import LeafletMap from './components/LeafletMap.vue' // 🌟 새로 만든 Leaflet 지도 컴포넌트 임포트
 
 const boardStore = useCommunityStore()
 const chatbotStore = useChatbotStore()
+const tourStore = useTourStore() // 🌟 7대 데이터 스토어 인스턴스 선언
 
 const userInput = ref('')
+const selectedPlace = ref(null) // 🌟 사용자가 지도 마커를 눌러 선택한 장소 데이터 상태
 
-// 글 작성 폼 상태
-const form = ref({
-  title: '',
-  content: '',
-  password: '',
-  category: 'attraction'
-})
+// 7대 카테고리 매핑 정보
+const categories = [
+  { key: 'attraction', name: '관광지' },
+  { key: 'culture', name: '문화시설' },
+  { key: 'festival', name: '축제/행사' },
+  { key: 'course', name: '여행코스' },
+  { key: 'sports', name: '레포츠' },
+  { key: 'accommodation', name: '숙박' },
+  { key: 'shopping', name: '쇼핑' }
+]
 
 const tabs = [
   { key: 'all', name: '전체' },
@@ -167,6 +233,13 @@ const tabs = [
   { key: 'shopping', name: '쇼핑' }
 ]
 
+const form = ref({
+  title: '',
+  content: '',
+  password: '',
+  category: 'attraction'
+})
+
 const modal = ref({
   isOpen: false,
   type: '',
@@ -175,6 +248,17 @@ const modal = ref({
   editTitle: '',
   editContent: ''
 })
+
+// 카테고리가 다른 곳으로 바뀌면 상세 카드 선택 기록을 지워줍니다.
+watch(() => tourStore.currentCategory, () => {
+  selectedPlace.value = null
+})
+
+// 7대 카테고리 영문 코드를 한글명으로 매핑해주는 헬퍼 함수
+const getTourCategoryName = (key) => {
+  const target = categories.find(c => c.key === key)
+  return target ? target.name : key
+}
 
 const getCategoryName = (key) => {
   const target = tabs.find(t => t.key === key)
@@ -204,6 +288,12 @@ const handleSend = async () => {
   const tempInput = userInput.value
   userInput.value = ''
   await chatbotStore.sendMessage(tempInput)
+}
+
+// 🌟 지도의 상세 카드에서 AI 연동 버튼을 눌렀을 때 실행될 헬퍼 함수
+const askChatbotAboutPlace = (placeTitle) => {
+  userInput.value = `서울에 있는 '${placeTitle}'에 대해서 볼거리나 특징을 자세히 알려줘!`
+  handleSend()
 }
 
 const openModal = (id, type) => {
