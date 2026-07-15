@@ -5,7 +5,9 @@ $home = @'
       <img class="hero-img" :src="hero" alt="hero" />
       <div class="hero-overlay">
         <h1>서울, 당신만의 여행지</h1>
-        <p>분위기별로 골라보는 추천 코스</p>
+        <p style="color: var(--muted); font-weight: 600; text-shadow: 0 1px 2px rgba(255,255,255,0.8);">
+  분위기별로 골라보는 추천 코스
+</p>
       </div>
     </header>
 
@@ -27,10 +29,10 @@ $home = @'
 
 <script setup>
 import { ref, computed } from 'vue';
-import CategoryTabs from './CategoryTabs.vue';
-import SearchBar from './SearchBar.vue';
-import PlaceCard from './PlaceCard.vue';
-import heroImg from './assets/hero.png';
+import CategoryTabs from '../components/CategoryTabs.vue';
+import SearchBar from '../components/SearchBar.vue';
+import PlaceCard from '../components/PlaceCard.vue';
+import heroImg from '../assets/hero.png';
 
 const hero = heroImg;
 const tabs = ['전체', '힐링', '미식', '역사', '쇼핑'];

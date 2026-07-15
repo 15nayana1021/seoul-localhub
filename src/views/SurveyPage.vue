@@ -43,7 +43,9 @@
 
 <script setup>
 import { ref, reactive, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router'; // 🌟 [추가] 설문 완료 후 이동을 위한 라우터 로드
 
+const router = useRouter(); // 🌟 [추가] 라우터 인스턴스 생성
 const step = ref(0);
 const selected = ref(null);
 const choosing = ref(false);
@@ -69,14 +71,15 @@ const persist = () => {
 };
 
 const handleAnswer = (key, value) => {
-  // 안전하게 기록하고 step을 오버플로우하지 않도록 클램프
   answers[key] = value;
   persist();
   if (step.value < questions.length - 1) {
     step.value = Math.min(step.value + 1, questions.length - 1);
   } else {
-    // 마지막 문항 도달 시 (원하면 결과 처리 추가)
-    // step은 더 이상 증가하지 않음
+    // 🌟 [수정] 마지막 문항 입력 완료 후, 0.3초 딜레이를 두고 결과 페이지(/result)로 부드럽게 이동합니다.
+    setTimeout(() => {
+      router.push('/result');
+    }, 300);
   }
 };
 
@@ -88,7 +91,6 @@ onMounted(() => {
       Object.keys(answers).forEach(k => { if (obj[k]) answers[k] = obj[k]; });
     }
   } catch (e) {}
-  // 만약 저장된 step이 범위를 벗어나면 마지막 항목으로 정리
   if (step.value < 0 || step.value >= questions.length) step.value = Math.max(0, questions.length - 1);
   selected.value = answers[questions[step.value].key] || null;
 });
@@ -102,7 +104,6 @@ watch(step, (n) => {
 });
 
 const choose = (opt) => {
-  // 중복 클릭 보호 및 현재 질문 캡처
   if (choosing.value) return;
   const current = step.value;
   const q = questions[current];
@@ -112,7 +113,6 @@ const choose = (opt) => {
   choosing.value = true;
 
   setTimeout(() => {
-    // 선택 후 안전하게 기록 (현재 step이 바뀌었더라도 캡처된 key로 처리)
     handleAnswer(q.key, opt);
     choosing.value = false;
   }, 180);
@@ -146,14 +146,12 @@ const choose = (opt) => {
   color:var(--text);
 }
 
-/* decorative blobs */
 .blobs { position:absolute; inset:0; pointer-events:none; }
 .blob { position:absolute; filter: blur(36px); opacity:0.95; transform: translateZ(0); }
 .b1 { width:360px; height:360px; left:-80px; top:-60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.45), transparent 40%); }
 .b2 { width:280px; height:280px; right:-60px; top:40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.28), transparent 40%); }
 .b3 { width:220px; height:220px; left:20%; bottom:-80px; background: radial-gradient(circle at 50% 50%, rgba(255,213,174,0.22), transparent 40%); }
 
-/* card */
 .card{
   width:100%;
   max-width:760px;
@@ -167,22 +165,18 @@ const choose = (opt) => {
   z-index:2;
 }
 
-/* header */
 .card-head { text-align:center; margin-bottom:18px; }
 .title { font-size:28px; margin:0; letter-spacing:-0.6px; font-weight:700; color:var(--text); }
 .subtitle { margin:8px 0 0; color:var(--muted); font-size:13px; }
 
-/* progress */
 .progress-wrap { display:flex; align-items:center; gap:12px; margin:16px 0 18px; }
 .progress-line { flex:1; height:10px; background:linear-gradient(90deg, rgba(17,17,17,0.06), rgba(17,17,17,0.03)); border-radius:999px; overflow:hidden; }
 .progress-fill { height:100%; background: linear-gradient(90deg, var(--accent-2), var(--accent-1)); border-radius:999px; transition: width 320ms cubic-bezier(.2,.9,.3,1); box-shadow:0 6px 18px rgba(155,124,255,0.12); }
 .progress-text { font-size:13px; color:var(--muted); min-width:64px; text-align:right; }
 
-/* question */
 .question-area { margin-top:8px; }
 .question { font-size:20px; margin:0 0 18px; color:var(--text); line-height:1.3; text-align:center; }
 
-/* options layout *//* options layout */
 .options {
   display:flex;
   flex-direction:column;
@@ -197,7 +191,6 @@ const choose = (opt) => {
   flex-wrap:wrap;
 }
 
-/* option tile */
 .opt {
   display:flex;
   align-items:center;
@@ -216,13 +209,8 @@ const choose = (opt) => {
   user-select:none;
 }
 
-/* emoji */
 .opt-emoji { font-size:20px; display:inline-block; transform:translateY(2px); }
-
-/* disabled style */
 .opt[disabled] { opacity:0.6; pointer-events:none; }
-
-/* selected & hover */
 .opt:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 18px 46px rgba(24,16,40,0.1); }
 .opt.selected {
   background: linear-gradient(90deg, rgba(155,124,255,0.18), rgba(255,138,182,0.14));
@@ -231,7 +219,6 @@ const choose = (opt) => {
   transform: translateY(-8px) scale(1.02);
 }
 
-/* responsive */
 @media (max-width:760px) {
   .card { padding:20px; margin:0 12px; }
   .options.two-cols { flex-direction:column; }
