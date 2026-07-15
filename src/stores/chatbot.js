@@ -5,7 +5,6 @@ import { useTourStore } from './tour'
 export const useChatbotStore = defineStore('chatbot', () => {
   const tourStore = useTourStore()
   
- 
   const messages = ref([
     {
       role: 'assistant',
@@ -29,12 +28,10 @@ export const useChatbotStore = defineStore('chatbot', () => {
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY
 
       if (!apiKey) {
-        // API Key가 없을 때 예외 처리 (테스트 및 개발 편의성 확보)
         throw new Error('API Key가 설정되지 않았습니다. .env 파일의 VITE_OPENAI_API_KEY를 확인해 주세요.')
       }
 
-      // 3. System Prompt 엔지니어링 설계 (우리가 가진 데이터를 가공하여 OpenAI에게 전달)
-      // OpenAI가 답변할 때 참고할 서울의 7대 데이터셋 요약본을 학습시킵니다.
+      // System Prompt 엔지니어링 설계 (공공데이터 요약본 학습)
       const systemContext = `
         당신은 서울 여행 전문 가이드 챗봇 'LocalHub AI 비서'입니다.
         사용자가 서울 여행 관련 질문을 던지면 아래의 실제 서울 공공데이터 정보(JSON 데이터 요약)를 기반으로 신뢰성 높은 추천 답변을 제공해야 합니다.
@@ -53,7 +50,7 @@ export const useChatbotStore = defineStore('chatbot', () => {
         3. 만약 제공된 리스트에 없는 장소를 물어볼 경우, 가상의 거짓말(환각 현상)을 지어내지 말고 "데이터를 조회 중이거나 제가 보관 중인 서울 공공데이터 범위 밖의 장소"라고 솔직하게 안내하고 차선책을 제안하세요.
       `
 
-      // 4. OpenAI API 요청 데이터 포맷 세팅 (비동기 Fetch 통신)
+      // OpenAI API 요청 전송 (비동기 Fetch 통신)
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -65,8 +62,8 @@ export const useChatbotStore = defineStore('chatbot', () => {
           messages: [
             { role: 'system', content: systemContext },
             ...messages.value.map(m => ({ role: m.role, content: m.content }))
-          ],
-          temperature: 0.7
+          ]
+          // 🌟 [수정 완료] o1-mini 등 모든 모델 호환을 위해 고정값 요구 파라미터인 temperature 옵션을 완전히 제거했습니다.
         })
       })
 
@@ -75,7 +72,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
         throw new Error(errorData.error?.message || 'API 통신 중 오류가 발생했습니다.')
       }
 
-      // 5. 비동기로 응답 처리 완료 후 대화 기록에 탑재
       const data = await response.json()
       const aiReply = data.choices[0].message.content
 
@@ -86,7 +82,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
 
     } catch (error) {
       console.error(error)
-      // 화면에 에러 말풍선 띄우기
       messages.value.push({
         role: 'assistant',
         content: `⚠️ 에러 발생: ${error.message}`

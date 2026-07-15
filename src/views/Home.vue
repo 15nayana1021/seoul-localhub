@@ -16,6 +16,10 @@ $home = @'
       <SearchBar :query="query" @update:query="query = $event" />
     </section>
 
+    <section class="map-section" style="margin: 20px 0; width: 100%;">
+  <LeafletMap :items="filtered" />
+</section>
+
     <section class="list">
       <PlaceCard
         v-for="place in filtered"
@@ -33,6 +37,7 @@ import CategoryTabs from '../components/CategoryTabs.vue';
 import SearchBar from '../components/SearchBar.vue';
 import PlaceCard from '../components/PlaceCard.vue';
 import heroImg from '../assets/hero.png';
+import LeafletMap from '../components/LeafletMap.vue';
 
 const hero = heroImg;
 const tabs = ['전체', '힐링', '미식', '역사', '쇼핑'];
@@ -58,6 +63,8 @@ const filtered = computed(() => {
 });
 </script>
 
+
+
 <style scoped>
 .home-root { padding: 18px; max-width:1100px; margin:0 auto; }
 .hero { position:relative; border-radius:12px; overflow:hidden; }
@@ -68,7 +75,18 @@ const filtered = computed(() => {
 .list { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
 .empty { grid-column:1/-1; text-align:center; color:#666; padding:28px 0; }
 @media (max-width:760px){ .hero-img{height:160px} .hero-overlay h1{font-size:20px} }
+/* 🟢 지도를 감싸는 구역의 스타일 규칙 추가 */
+.map-section {
+  width: 100%;
+  height: 400px; /* 👈 지도가 보일 적절한 높이를 지정합니다. */
+  border-radius: 14px; /* 테마에 맞춰 둥글게 깎아줍니다. */
+  overflow: hidden; /* 지도가 둥근 테두리 밖으로 삐져나가지 않게 막아줍니다. */
+  box-shadow: var(--shadow-soft); /* 부드러운 네온 입체 그림자 적용. */
+  border: 1px solid var(--card-border); /* 테두리선 가볍게 두르기. */
+}
 </style>
+
+
 '@
 
 $home | Out-File -FilePath .\src\Home.vue -Encoding utf8

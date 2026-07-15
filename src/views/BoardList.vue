@@ -1,56 +1,130 @@
 <template>
   <div class="board">
     <header class="board-header">
-      <h2 class="board-title">게시판 목록</h2>
+      <h2 class="board-title">커뮤니티 게시판</h2>
+      <button @click="goToWrite" class="write-btn">새 글 작성</button>
     </header>
+
+    <div class="category-filters">
+      <button 
+        v-for="cat in categories" 
+        :key="cat.value"
+        :class="['filter-btn', { active: communityStore.currentCategory === cat.value }]"
+        @click="communityStore.setCategory(cat.value)"
+      >
+        {{ cat.label }}
+      </button>
+    </div>
 
     <section class="posts-grid">
       <article
-        v-for="(post, index) in posts"
-        :key="index"
-        class="post-card"
+        v-for="post in communityStore.filteredPosts"
+        :key="post.id"
+        class="post-card clickable"
         role="article"
         aria-label="게시물"
+        @click="goToDetail(post.id)"
       >
         <div class="post-body">
+          <span class="post-category-tag">{{ getCategoryLabel(post.category) }}</span>
           <h3 class="post-title">{{ post.title }}</h3>
-          <p class="post-meta">{{ post.author }} · {{ post.date }}</p>
+          <p class="post-meta">익명 · {{ formatDate(post.createdAt) }}</p>
           <p class="post-excerpt">{{ post.content }}</p>
         </div>
       </article>
 
-      <p v-if="!posts.length" class="muted">저장된 글이 없습니다. 새 글을 작성해보세요.</p>
+      <p v-if="!communityStore.filteredPosts.length" class="muted">
+        등록된 게시글이 없습니다. 첫 번째 이야기를 들려주세요!
+      </p>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useCommunityStore } from '../stores/community'; // 🌟 Pinia 스토어 임포트
+import { format } from 'date-fns'; // 🌟 날짜 포맷 라이브러리 임포트
 
-const sample = [
-  { title: '첫 번째 게시물', author: '사용자1', date: '2026-07-15', content: '안녕하세요! 반갑습니다. 이 게시물은 예시 텍스트입니다.' },
-  { title: 'Vue.js 공부', author: '개발자', date: '2026-07-14', content: 'CSS가 생각보다 중요하네요. 반응형 레이아웃과 그리드를 잘 활용하면 보기 좋아집니다.' }
+const router = useRouter();
+const communityStore = useCommunityStore();
+
+// UI 표시용 카테고리 목록 정의
+const categories = [
+  { label: '전체', value: 'all' },
+  { label: '관광지 추천', value: 'attraction' },
+  { label: '동네 후기', value: 'local' },
+  { label: '자유 소통', value: 'free' }
 ];
 
-const posts = ref([]);
-
-const loadPosts = () => {
-  const saved = localStorage.getItem('posts');
-  posts.value = saved ? JSON.parse(saved) : sample.slice();
+// 카테고리 영문 코드를 한글 라벨로 치환하는 헬퍼 함수
+const getCategoryLabel = (catValue) => {
+  const found = categories.find(c => c.value === catValue);
+  return found ? found.label : '일반';
 };
 
-onMounted(() => {
-  loadPosts();
-  // update when other tabs or manual storage events run
-  window.addEventListener('storage', loadPosts);
-});
+// 타임스탬프를 'yyyy-MM-dd HH:mm' 포맷으로 변경
+const formatDate = (timestamp) => {
+  if (!timestamp) return '';
+  return format(new Date(timestamp), 'yyyy-MM-dd HH:mm');
+};
 
+// 글쓰기 페이지 이동
+const goToWrite = () => {
+  router.push('/board/write'); // 라우터 경로에 맞게 설정
+};
+
+// 상세 페이지 이동
+const goToDetail = (id) => {
+  router.push(`/board/${id}`); // 라우터 상세 경로에 맞게 설정
+};
 </script>
 
 <style scoped>
-:root { --muted:#6b7280; --text:#111827; --card-border: rgba(17,24,39,0.06); }
-
 .board { padding: 24px; max-width:1100px; margin:0 auto; box-sizing:border-box; }
+.board-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.board-title { font-size:1.5rem; margin:0; color:var(--text); font-family: var(--sans); font-weight: 700; }
+
+/* 새 글 작성 버튼 */
+.write-btn {
+  background: linear-gradient(90deg, var(--accent-2), var(--accent-1));
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--transition);
+}
+.write-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* 카테고리 필터 디자인 */
+.category-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(155, 124, 255, 0.15);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+.filter-btn.active {
+  background: var(--accent-2);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* 게시글 그리드 및 카드 */
 .posts-grid { display:grid; grid-template-columns:1fr; gap:16px; }
 @media (min-width:768px) { .posts-grid { grid-template-columns: repeat(2,1fr); gap:20px; } }
 
@@ -58,10 +132,35 @@ onMounted(() => {
   background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,255,0.9));
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 14px 40px rgba(24,16,40,0.06);
+  box-shadow: var(--shadow-soft);
   border: 1px solid var(--card-border);
-  display:flex; flex-direction:column;
+  display:flex; 
+  flex-direction:column;
+  text-align: left;
+  transition: transform var(--transition), box-shadow var(--transition);
 }
-.post-title { font-weight:600; margin:0 0 8px 0; }
-.muted { color:var(--muted); padding:16px 0; }
+.post-card.clickable {
+  cursor: pointer;
+}
+.post-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(155, 124, 255, 0.12);
+}
+
+.post-category-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-2);
+  background: rgba(155, 124, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+
+.post-title { font-weight:600; margin:0 0 8px 0; color: var(--text); font-size: 1.1rem; }
+.post-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.post-excerpt { font-size: 13px; color: #555; line-height: 1.5; margin: 0; }
+.muted { color:var(--muted); padding:16px 0; text-align: center; width: 100%; grid-column: 1 / -1; }
 </style>

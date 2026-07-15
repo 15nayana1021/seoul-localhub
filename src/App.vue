@@ -10,12 +10,14 @@
     <div class="p-4">
       <RouterView />
     </div>
+
+    <TravelChatbot />
   </div>
 </template>
 
 <script setup>
-// 💡 [변경 핵심] 더 이상 임시 page 상태나 개별 뷰 컴포넌트를 직접 Import할 필요가 없습니다!
-// 라우팅 맵(src/router/index.js)에서 선언한 규칙에 따라 컴포넌트가 동적으로 로드됩니다.
+import { RouterView, RouterLink } from 'vue-router';
+import TravelChatbot from './components/TravelChatbot.vue'; // 정상적으로 가져오고 있습니다!
 </script>
 
 <style>
@@ -37,8 +39,8 @@ nav.p-4 {
   border-bottom: 1px solid rgba(155,124,255,0.07);
 }
 
-/* 💡 [스타일 보존] 'nav.p-4 button' 대신 '.nav-link' 클래스로 선택자를 수정하여 
-   A님이 깎아둔 세련된 그라데이션 라운드 버튼 디자인을 그대로 살렸습니다. */
+/* 💡 [스타일 보존] '.nav-link' 클래스로 선택자를 수정하여 
+   팀원 A님이 깎아둔 세련된 그라데이션 라운드 버튼 디자인을 그대로 살렸습니다. */
 nav.p-4 .nav-link {
   background: linear-gradient(90deg,#9b7cff,#ff8ab6);
   color:#fff;

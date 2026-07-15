@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 1. 팀원 A님이 만든 뼈대 컴포넌트들을 가져옵니다 (경로에 맞게 수정 필요!)
+// 컴포넌트들을 가져옵니다
 import Home from '../views/Home.vue'
 import BoardList from '../views/BoardList.vue'
 import BoardDetail from '../views/BoardDetail.vue'
 import BoardWrite from '../views/BoardWrite.vue'
 import SurveyPage from '../views/SurveyPage.vue'
 import ResultPage from '../views/ResultPage.vue'
+
 const routes = [
   {
     path: '/',
@@ -19,15 +20,18 @@ const routes = [
     component: BoardList
   },
   {
+    /* 🌟 [순서 조정] /board/write가 정적 경로이므로 아래의 동적 ID 와일드카드(:id) 매칭보다 
+      상단에 위치하게 배치하여 글쓰기 진입 시 상세 페이지로 오작동하는 불상사를 예방합니다!
+    */
+    path: '/board/write',
+    name: 'board-write',
+    component: BoardWrite
+  },
+  {
     path: '/board/:id',
     name: 'board-detail',
     component: BoardDetail,
     props: true
-  },
-  {
-    path: '/board/write',
-    name: 'board-write',
-    component: BoardWrite
   },
   {
     path: '/survey',

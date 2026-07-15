@@ -1,11 +1,11 @@
 <template>
-  <div class="relative w-full h-full rounded-xl overflow-hidden shadow-inner border border-gray-200">
-    <div ref="mapContainer" class="w-full h-full min-h-[450px] z-0"></div>
+  <div class="map-wrapper">
+    <div ref="mapContainer" class="map-container"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick, defineProps, defineEmits } from 'vue'
 import L from 'leaflet'
 // Leaflet 스타일시트 직접 임포트 (지도 타일이 깨지지 않게 해줍니다)
 import 'leaflet/dist/leaflet.css'
@@ -40,7 +40,7 @@ const fixDefaultIcon = () => {
 const initMap = () => {
   fixDefaultIcon()
 
-  // 서울 시청 좌표 기준(37.5665, 126.9780)으로 지도 생성 (API Key 필요 없음!)
+  // 서울 시청 좌표 기준(37.5665, 126.9780)으로 지도 생성
   mapInstance = L.map(mapContainer.value).setView([37.5665, 126.9780], 11)
 
   // 전세계 오픈 소스 지도 타일(OpenStreetMap) 추가
@@ -53,6 +53,15 @@ const initMap = () => {
 
   // 최초 데이터가 넘어왔다면 마커 그리기 실행
   updateMarkers()
+
+  // 🌟 [안전장치] Vue 렌더링 타이밍 차이로 지도가 회색으로 깨져 보일 때 크기를 강제 재조정합니다.
+  nextTick(() => {
+    setTimeout(() => {
+      if (mapInstance) {
+        mapInstance.invalidateSize()
+      }
+    }, 200)
+  })
 }
 
 // 2. 공공데이터 위/경도를 마커로 지도 위에 핀 꼽기
@@ -62,7 +71,7 @@ const updateMarkers = () => {
   // 기존에 그려진 마커들 싹 지우기
   markerGroup.clearLayers()
 
-  if (!props.items.length) return
+  if (!props.items || !props.items.length) return
 
   const latLngs = []
 
@@ -79,17 +88,15 @@ const updateMarkers = () => {
     // 마커 클릭 시 띄울 팝업(인포윈도우) 세팅 및 이벤트 바인딩
     const popupContent = `
       <div style="font-family: sans-serif; padding: 2px;">
-        <p style="font-weight: bold; margin: 0 0 4px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">${item.title}</p>
+        <p style="font-weight: bold; margin: 0 0 4px 0; border-bottom: 1px solid #eee; padding-bottom: 4px; color: #111;">${item.title}</p>
         <p style="color: #666; margin: 0; font-size: 11px;">${item.addr1 || '상세주소 없음'}</p>
       </div>
     `
     marker.bindPopup(popupContent)
 
-    // 🌟 마커 클릭 시 동작 정의
+    // 마커 클릭 시 동작 정의
     marker.on('click', () => {
-      // 1) 팝업을 열고
       marker.openPopup()
-      // 2) 부모 컴포넌트에 클릭한 장소 데이터를 통째로 전달합니다!
       emit('select-item', item)
     })
 
@@ -114,3 +121,23 @@ onMounted(() => {
   initMap()
 })
 </script>
+
+<style scoped>
+/* 🟢 테일윈드 대신 사용할 표준 CSS 높이 설정 */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 450px; /* 지도가 보일 확실한 세로 높이 고정! */
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(155, 124, 255, 0.15);
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  min-height: 450px;
+  background-color: #f3f4f6; /* 지도 로드 전 연회색 배경 처리 */
+}
+</style>
