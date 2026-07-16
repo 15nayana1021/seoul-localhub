@@ -62,19 +62,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { useCommunityStore } from '../stores/community' // 🌟 실제 존재하는 community 스토어 로드!
+import { useCommunityStore } from '../stores/community'
 
 const router = useRouter()
 const communityStore = useCommunityStore() //
 
-// Pinia에서 반응형으로 필터 카테고리 상태 가져오기
 const { currentCategory } = storeToRefs(communityStore)
 
-// 🌟 [핵심 해결!] 기존 템플릿의 'posts'가 에러 없이 작동하도록 computed로 바인딩합니다.
-// community.js 내부의 filteredPosts를 참조하여 필터링 및 시간순 정렬이 자동 완성됩니다!
 const posts = computed(() => communityStore.filteredPosts)
 
-// 카테고리 탭 목록 구성 (중앙 데이터 필터 연동)
 const tabs = [
   { label: '전체', value: 'all' },
   { label: '관광지', value: 'attraction' },
@@ -102,13 +98,11 @@ const getCategoryLabel = (cat) => {
   return labels[cat] || '일반'
 }
 
-// 본문 내용이 길 때 생략해주는 헬퍼 함수
 const truncateText = (text, length) => {
   if (!text) return ''
   return text.length > length ? text.substring(0, length) + '...' : text
 }
 
-// 밀리초 타임스탬프를 년.월.일 포맷으로 안전하게 변경하는 함수
 const formatDate = (timestamp) => {
   if (!timestamp) return ''
   const date = new Date(timestamp)
@@ -170,7 +164,6 @@ const goWrite = () => {
 .board-header h2 { font-size: 26px; font-weight: 700; color: var(--text); margin: 0; }
 .muted { font-size: 13px; color: #736077; margin-top: 8px; }
 
-/* 📂 카테고리 탭 스타일링 */
 .category-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -196,7 +189,6 @@ const goWrite = () => {
   box-shadow: 0 4px 12px rgba(155, 124, 255, 0.2);
 }
 
-/* 📋 목록 카드 디자인 */
 .posts-grid {
   display: flex;
   flex-direction: column;

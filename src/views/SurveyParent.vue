@@ -53,7 +53,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-// 🟢 부품(components) 폴더를 바라보도록 경로 수정[cite: 6]
 import SurveyDateSection from '../components/SurveyDateSection.vue';
 import SurveyOptionSection from '../components/SurveyOptionSection.vue';
 import SurveyMbtiSection from '../components/SurveyMbtiSection.vue';
@@ -97,7 +96,6 @@ watch([startDate, endDate], () => {
 });
 
 const submitSurvey = () => {
-  // 필수 선택값 예외 처리 (선택 안 하면 넘어가기 방지)
   if (!startDate.value || !endDate.value || !gender.value || !ageGroup.value || !companion.value) {
     alert('모든 여행 정보를 빠짐없이 선택 및 입력해 주세요! 😊');
     return;
@@ -113,10 +111,8 @@ const submitSurvey = () => {
     stayText: stayText.value
   };
 
-  // 로컬스토리지에 안전하게 1단계 데이터 저장
   localStorage.setItem('surveyData', JSON.stringify(surveyData)); //
   
-  // 🌟 2단계 성향 질문 페이지(followup)로 유연하게 이동
   router.push({ name: 'survey-followup' }); //
 };
 </script>
@@ -133,7 +129,7 @@ const submitSurvey = () => {
 
 .card {
   width: 100%;
-  max-width: 680px; /* 좀 더 아기자기한 폭으로 조절 */
+  max-width: 680px;
   background: #ffffff;
   border-radius: 24px;
   padding: 32px;
@@ -166,7 +162,6 @@ const submitSurvey = () => {
   gap: 20px;
 }
 
-/* 🌟 이미지처럼 버튼을 오른쪽 아래에 배치하기 위한 컨테이너 */
 .submit-btn-wrapper {
   display: flex;
   justify-content: flex-end;

@@ -31,7 +31,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
         throw new Error('API Key가 설정되지 않았습니다. .env 파일의 VITE_OPENAI_API_KEY를 확인해 주세요.')
       }
 
-      // System Prompt 엔지니어링 설계 (공공데이터 요약본 학습)
       const systemContext = `
         당신은 서울 여행 전문 가이드 챗봇 'LocalHub AI 비서'입니다.
         사용자가 서울 여행 관련 질문을 던지면 아래의 실제 서울 공공데이터 정보(JSON 데이터 요약)를 기반으로 신뢰성 높은 추천 답변을 제공해야 합니다.
@@ -50,7 +49,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
         3. 만약 제공된 리스트에 없는 장소를 물어볼 경우, 가상의 거짓말(환각 현상)을 지어내지 말고 "데이터를 조회 중이거나 제가 보관 중인 서울 공공데이터 범위 밖의 장소"라고 솔직하게 안내하고 차선책을 제안하세요.
       `
 
-      // OpenAI API 요청 전송 (비동기 Fetch 통신)
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -63,7 +61,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
             { role: 'system', content: systemContext },
             ...messages.value.map(m => ({ role: m.role, content: m.content }))
           ]
-          // 🌟 [수정 완료] o1-mini 등 모든 모델 호환을 위해 고정값 요구 파라미터인 temperature 옵션을 완전히 제거했습니다.
         })
       })
 
@@ -91,7 +88,6 @@ export const useChatbotStore = defineStore('chatbot', () => {
     }
   }
 
-  // 대화방 초기화 기능
   const clearHistory = () => {
     messages.value = [
       {

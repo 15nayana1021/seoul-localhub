@@ -18,7 +18,6 @@
 </template>
 
 <script setup>
-// 글로벌 참조 에러 방지를 위해 매크로를 명시적으로 가져옵니다.
 import { defineProps, defineEmits } from 'vue';
 
 defineProps({

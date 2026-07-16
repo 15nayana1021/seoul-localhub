@@ -51,7 +51,7 @@
 
 <script setup>
 import { ref, nextTick, watch } from 'vue';
-import { useChatbotStore } from '../stores/chatbot'; // 🌟 스토어 경로 연동
+import { useChatbotStore } from '../stores/chatbot';
 
 const chatbotStore = useChatbotStore();
 const isOpen = ref(false);
@@ -59,7 +59,6 @@ const userInput = ref('');
 const msgArea = ref(null);
 const inputField = ref(null);
 
-// 대화창 토글 및 자동 포커스 처리
 const toggleChat = () => {
   isOpen.value = !isOpen.value;
   if (isOpen.value) {
@@ -68,7 +67,6 @@ const toggleChat = () => {
   }
 };
 
-// 최신 메시지가 항상 화면 하단에 오도록 스크롤 제어
 const scrollToBottom = () => {
   nextTick(() => {
     if (msgArea.value) {
@@ -81,14 +79,12 @@ const scrollToBottom = () => {
 const handleSend = async () => {
   if (!userInput.value.trim() || chatbotStore.isLoading) return;
   const msg = userInput.value;
-  userInput.value = ''; // 전송 버튼을 누르는 즉시 입력창 초기화
+  userInput.value = '';
   
-  // 🌟 스토어의 sendMessage 액션을 호출하여 비동기 API 통신 시작
   await chatbotStore.sendMessage(msg);
   scrollToBottom();
 };
 
-// 새로운 답변이나 질문이 배열에 쌓이면 자동으로 하단 스크롤 동기화
 watch(() => chatbotStore.messages.length, () => {
   scrollToBottom();
 });
@@ -103,12 +99,10 @@ watch(() => chatbotStore.messages.length, () => {
   font-family: var(--sans);
 }
 
-/* 플로팅 버튼 디자인 */
 .chatbot-trigger-btn {
   width: 100px;
   height: 48px;
   border-radius: 999px;
-  /* 🌟 테마 변수가 로드되지 않더라도 확실히 보이도록 백업 색상(#9b7cff, #ff8ab6)을 추가합니다! */
   background: linear-gradient(135deg, var(--accent-2, #9b7cff), var(--accent-1, #ff8ab6));
   color: white;
   border: none;
@@ -116,7 +110,6 @@ watch(() => chatbotStore.messages.length, () => {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(155, 124, 255, 0.3);
-  /* 🌟 트랜지션 시간 변수에도 백업값(240ms)을 지정해 안정성을 높입니다. */
   transition: transform var(--transition, 240ms), box-shadow var(--transition, 240ms);
 } 
 .chatbot-trigger-btn:hover {
@@ -124,7 +117,6 @@ watch(() => chatbotStore.messages.length, () => {
   box-shadow: 0 12px 30px rgba(155, 124, 255, 0.45);
 }
 
-/* 대화 수납창 본체 */
 .chat-window {
   position: absolute;
   bottom: 64px;
@@ -146,9 +138,7 @@ watch(() => chatbotStore.messages.length, () => {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* 헤더 상단 */
 .chat-header {
-  /* 🌟 여기도 마찬가지로 백업 그라데이션 색상을 넣어줍니다. */
   background: linear-gradient(90deg, var(--accent-2, #9b7cff), var(--accent-1, #ff8ab6));
   padding: 12px 16px;
   display: flex;
@@ -173,7 +163,6 @@ watch(() => chatbotStore.messages.length, () => {
 }
 .clear-btn:hover { background: rgba(255, 255, 255, 0.3); }
 
-/* 대화 리스트 뷰 영역 */
 .chat-messages {
   flex: 1;
   padding: 16px;
@@ -184,7 +173,6 @@ watch(() => chatbotStore.messages.length, () => {
   background: #fdfcff;
 }
 
-/* 말풍선 공통 스타일 */
 .message-bubble {
   display: flex;
   max-width: 85%;
@@ -197,7 +185,6 @@ watch(() => chatbotStore.messages.length, () => {
   text-align: left;
 }
 
-/* 내 질문 (우측) */
 .message-bubble.user {
   align-self: flex-end;
 }
@@ -208,7 +195,6 @@ watch(() => chatbotStore.messages.length, () => {
   box-shadow: 0 4px 12px rgba(155, 124, 255, 0.15);
 }
 
-/* AI 가이드 답변 (좌측) */
 .message-bubble.assistant {
   align-self: flex-start;
 }
@@ -218,10 +204,9 @@ watch(() => chatbotStore.messages.length, () => {
   border: 1px solid rgba(155, 124, 255, 0.08);
   border-bottom-left-radius: 2px;
   box-shadow: 0 4px 12px rgba(24, 16, 40, 0.02);
-  white-space: pre-line; /* AI가 던져주는 마크다운 문단 개행을 깨끗하게 표현합니다. */
+  white-space: pre-line;
 }
 
-/* 생각 중... 애니메이션 닷 스키마 */
 .loading .dot {
   animation: dots 1.4s infinite;
   display: inline-block;
@@ -235,7 +220,6 @@ watch(() => chatbotStore.messages.length, () => {
   50% { opacity: 1; transform: translateY(-3px); }
 }
 
-/* 하단 입력 폼 */
 .chat-input-form {
   display: flex;
   padding: 10px 12px;

@@ -39,7 +39,6 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 질문 리스트 정의 (질문 사항 변경 없음)
 const questions = [
   {
     key: 'waiting',
@@ -96,10 +95,8 @@ const selectOption = (key, value) => {
     currentStep.value++
   } else {
     currentStep.value++
-    // 🌟 [안전 저장] 선택 완료 즉시 로컬스토리지에 userPreferences 기록
     localStorage.setItem('userPreferences', JSON.stringify(answers.value))
     
-    // 분석 효과 애니메이션 연출 후 결과창으로 이동
     setTimeout(() => {
       router.push('/result')
     }, 1500)

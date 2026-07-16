@@ -15,7 +15,6 @@ const props = defineProps({
     required: true,
     default: () => []
   },
-  // 🌟 [추가] 부모 컴포넌트(Home.vue)에서 리스트 카드를 클릭했을 때 날아갈 좌표 타겟
   activeItem: {
     type: Object,
     default: null
@@ -27,7 +26,7 @@ const emit = defineEmits(['select-item'])
 const mapContainer = ref(null)
 let mapInstance = null
 let markerGroup = null
-const markersMap = new Map() // 🌟 마커 객체들을 저장해둘 맵 (동적 팝업 제어용)
+const markersMap = new Map()
 
 const fixDefaultIcon = () => {
   delete L.Icon.Default.prototype._getIconUrl
@@ -64,7 +63,7 @@ const updateMarkers = () => {
   if (!mapInstance || !markerGroup) return
 
   markerGroup.clearLayers()
-  markersMap.clear() // 마커 저장소 비우기
+  markersMap.clear()
 
   if (!props.items || !props.items.length) return
 
@@ -86,15 +85,13 @@ const updateMarkers = () => {
     `
     marker.bindPopup(popupContent)
 
-    // 마커 클릭 시 동작
     marker.on('click', () => {
       marker.openPopup()
-      emit('select-item', item) // 🌟 부모에게 해당 장소 데이터 전달
+      emit('select-item', item)
     })
 
     markerGroup.addLayer(marker)
     
-    // 장소의 고유 ID(없다면 제목)를 Key로 마커 객체 보관
     const uniqueId = item.id || item.title
     markersMap.set(uniqueId, marker)
     
@@ -107,7 +104,6 @@ const updateMarkers = () => {
   }
 }
 
-// 🌟 [인터랙션 고도화] 부모 컴포넌트에서 특정 카드를 눌러 activeItem이 변경되면 지도를 비행(flyTo) 시킵니다.
 watch(() => props.activeItem, (newItem) => {
   if (!mapInstance || !newItem) return
 
@@ -116,19 +112,17 @@ watch(() => props.activeItem, (newItem) => {
 
   if (isNaN(lat) || !lat || isNaN(lng) || !lng) return
 
-  // 1. 해당 좌표로 부드럽게 지도를 확대 이동 시킵니다. (좌표, 줌 레벨, 이동 옵션)
   mapInstance.flyTo([lat, lng], 15, {
     animate: true,
-    duration: 1.5 // 이동 지속시간 (초 단위)
+    duration: 1.5
   })
 
-  // 2. 이동 후 팝업 자동 열기
   const uniqueId = newItem.id || newItem.title
   const targetMarker = markersMap.get(uniqueId)
   if (targetMarker) {
     setTimeout(() => {
       targetMarker.openPopup()
-    }, 1500) // 비행이 끝날 때쯤(1.5초 후) 팝업을 열어 깔끔하게 노출
+    }, 1500)
   }
 }, { deep: true })
 

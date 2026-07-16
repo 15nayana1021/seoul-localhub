@@ -13,6 +13,7 @@
       </header>
 
       <form @submit.prevent="handleSubmit" class="write-form">
+        <!-- 카테고리 선택 -->
         <div class="form-group">
           <label for="category">카테고리</label>
           <select id="category" v-model="category" class="select-input" required>
@@ -26,8 +27,14 @@
           </select>
         </div>
 
+        <!-- 제목 입력 + 실시간 글자 수 제한 -->
         <div class="form-group">
-          <label for="title">제목</label>
+          <div class="label-wrapper">
+            <label for="title">제목</label>
+            <span :class="['char-counter', { 'warning-text': title.length >= 30 }]">
+              {{ title.length }} / 30자
+            </span>
+          </div>
           <input 
             type="text" 
             id="title" 
@@ -38,17 +45,20 @@
           />
         </div>
 
+        <!-- 익명 게시글 비밀번호 입력 -->
         <div class="form-group">
           <label for="password">수정/삭제 비밀번호</label>
           <input 
             type="password" 
             id="password" 
             v-model="password" 
-            placeholder="수정 및 삭제 시 인증에 사용할 비밀번호" 
+            placeholder="수정 및 삭제 시 인증에 사용할 비밀번호 (4자 이상)" 
+            minlength="4"
             required
           />
         </div>
 
+        <!-- 사진 첨부 -->
         <div class="form-group">
           <label>사진 첨부</label>
           <div class="file-upload-wrapper">
@@ -69,19 +79,27 @@
             <span v-if="imageName" class="file-name">{{ imageName }}</span>
           </div>
 
+          <!-- 업로드된 이미지 미리보기 -->
           <div v-if="imagePreview" class="preview-container">
             <img :src="imagePreview" alt="미리보기" class="image-preview" />
             <button type="button" class="btn-remove-img" @click="removeImage">❌ 삭제</button>
           </div>
         </div>
 
+        <!-- 내용 입력 + 실시간 글자 수 제한 -->
         <div class="form-group">
-          <label for="content">내용</label>
+          <div class="label-wrapper">
+            <label for="content">내용</label>
+            <span :class="['char-counter', { 'warning-text': content.length >= 1000 }]">
+              {{ content.length }} / 1000자
+            </span>
+          </div>
           <textarea 
             id="content" 
             v-model="content" 
             rows="8" 
-            placeholder="따뜻한 여행 후기나 유용한 정보들을 자유롭게 적어주세요." 
+            placeholder="따뜻한 여행 후기나 유용한 정보들을 자유롭게 적어주세요. (최대 1000자)" 
+            maxlength="1000"
             required
           ></textarea>
         </div>
@@ -98,10 +116,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCommunityStore } from '../stores/community' //
+import { useCommunityStore } from '../stores/community'
 
 const router = useRouter()
-const communityStore = useCommunityStore() //
+const communityStore = useCommunityStore()
 
 const title = ref('')
 const content = ref('')
@@ -140,16 +158,41 @@ const removeImage = () => {
   document.getElementById('image-input').value = ''
 }
 
+// 🌟 유효성 검사 강화된 제출 핸들러
 const handleSubmit = () => {
-  if (!title.value.trim() || !content.value.trim() || !password.value.trim()) return
+  // 공백 및 미입력 차단 필터링
+  const cleanTitle = title.value.trim()
+  const cleanContent = content.value.trim()
+  const cleanPassword = password.value.trim()
 
-  // 🌟 [해결] createPost 메서드명 일치 및 세부 필수 오브젝트 데이터 전송!
+  if (!cleanTitle) {
+    alert('제목을 올바르게 입력해 주세요! (공백 제외)')
+    return
+  }
+  if (cleanTitle.length > 30) {
+    alert('제목은 최대 30자까지만 입력이 가능합니다.')
+    return
+  }
+  if (!cleanContent) {
+    alert('내용을 올바르게 기재해 주세요! (공백 제외)')
+    return
+  }
+  if (cleanContent.length > 1000) {
+    alert('내용은 최대 1000자까지만 입력이 가능합니다.')
+    return
+  }
+  if (cleanPassword.length < 4) {
+    alert('비밀번호는 안전을 위해 최소 4자 이상이어야 합니다.')
+    return
+  }
+
+  // 데이터 등록 통신 호출
   communityStore.createPost({
-    title: title.value,
-    content: content.value,
-    password: password.value,
+    title: cleanTitle,
+    content: cleanContent,
+    password: cleanPassword,
     category: category.value,
-    image: imagePreview.value // community.js에 추가한 이미지 속성
+    image: imagePreview.value
   })
 
   router.push('/board')
@@ -218,10 +261,26 @@ const goBack = () => {
   flex-direction: column;
   gap: 8px;
 }
+.label-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .form-group label {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
+}
+
+/* 🌟 글자 수 카운터 스타일 */
+.char-counter {
+  font-size: 12px;
+  color: #a394a8;
+  font-weight: 500;
+}
+.warning-text {
+  color: #ff6b6b !important;
+  font-weight: 700;
 }
 
 .form-group input[type="text"], 

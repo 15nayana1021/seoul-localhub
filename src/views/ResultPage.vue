@@ -34,6 +34,8 @@
           />
         </section>
 
+        <WeatherSummary :travel-info="travelInfo" />
+
         <section class="ai-report-card">
           <h3 class="report-title">🤖 AI 가이드의 맞춤 코스 제안서</h3>
           <p class="ai-text-content">{{ aiCoursePlan }}</p>
@@ -69,10 +71,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, onBeforeUpdate } from 'vue' 
+import { ref, onMounted, reactive, onBeforeUpdate, computed } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useTourStore } from '../stores/tour' 
 import LeafletMap from '../components/LeafletMap.vue' 
+import WeatherSummary from '../components/WeatherSummary.vue'
 
 const router = useRouter()
 const tourStore = useTourStore() 
@@ -82,7 +85,8 @@ const isLoading = ref(true)
 const aiCoursePlan = ref('')
 const aiRecommendedPlaces = ref([])
 
-// 🌟 양방향 상태 관리를 위한 변수 선언
+const travelInfo = ref({})
+
 const selectedItem = ref(null)
 const cardRefs = reactive(new Map()) 
 
@@ -123,7 +127,6 @@ const checkPreferences = () => {
   }
 }
 
-// AI 추천 코스 빌딩 요청
 const generateAICourse = async (userPrefs) => {
   try {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -131,13 +134,17 @@ const generateAICourse = async (userPrefs) => {
       throw new Error('API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.')
     }
 
-    // 🌟 [추가] 1단계 설문에서 로컬스토리지에 저장해둔 기본 여행 정보 꺼내기
     const rawSurveyData = localStorage.getItem('surveyData') //
     const surveyData = rawSurveyData ? JSON.parse(rawSurveyData) : { //
       stayText: '당일치기 여행',
       ageGroup: '20대',
       companion: '친구',
       mbti: 'ENFP'
+    }
+
+    travelInfo.value = {
+      startDate: surveyData.startDate || '',
+      endDate: surveyData.endDate || ''
     }
 
     const tourContext = {
@@ -250,10 +257,9 @@ const goToSurvey = () => {
   router.push('/survey')
 }
 
-// 🌟 테스트 다시 하기 클릭 시 두 저장소를 모두 완전히 초기화합니다.
 const retry = () => {
   localStorage.removeItem('userPreferences')
-  localStorage.removeItem('surveyData') // 1단계 정보도 함께 삭제
+  localStorage.removeItem('surveyData')
   router.push('/survey')
 }
 
