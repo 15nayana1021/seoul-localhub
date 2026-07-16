@@ -39,6 +39,44 @@
         </div>
       </div>
 
+      <div class="comments-section">
+        <h3 class="comments-title">💬 댓글 ({{ post.comments?.length || 0 }})</h3>
+        
+        <div class="comment-form">
+          <div class="comment-form-row">
+            <input 
+              type="text" 
+              v-model="newAuthor" 
+              placeholder="익명 닉네임" 
+              class="comment-input-author"
+            />
+          </div>
+          <div class="comment-form-row">
+            <textarea 
+              v-model="newContent" 
+              placeholder="따뜻한 댓글을 입력해 주세요." 
+              class="comment-input-content"
+            ></textarea>
+          </div>
+          <div class="comment-submit-row">
+            <button @click="submitComment" class="btn-comment-submit">댓글 등록</button>
+          </div>
+        </div>
+
+        <div class="comments-list" v-if="post.comments && post.comments.length > 0">
+          <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
+            <div class="comment-item-header">
+              <span class="comment-item-author">👤 {{ comment.author }}</span>
+              <span class="comment-item-date">{{ formatCommentDate(comment.createdAt) }}</span>
+            </div>
+            <p class="comment-item-content">{{ comment.content }}</p>
+          </div>
+        </div>
+        <div class="comments-empty" v-else>
+          아직 등록된 댓글이 없습니다. 첫 댓글을 작성해 보세요!
+        </div>
+      </div>
+
       <div class="action-footer">
         <button @click="goList" class="btn-list">📋 목록보기</button>
         <button @click="openDeleteModal" class="btn-delete">❌ 삭제하기</button>
@@ -83,9 +121,11 @@ const router = useRouter()
 const communityStore = useCommunityStore()
 
 const post = ref(null)
-
 const showDeleteModal = ref(false)
 const inputPassword = ref('')
+
+const newAuthor = ref('')
+const newContent = ref('')
 
 const getCategoryLabel = (cat) => {
   const labels = { 
@@ -104,6 +144,12 @@ const formatDate = (timestamp) => {
   if (!timestamp) return ''
   const date = new Date(timestamp)
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+const formatCommentDate = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 const openDeleteModal = () => {
@@ -142,7 +188,6 @@ const copyLink = async () => {
     await navigator.clipboard.writeText(currentUrl)
     alert('게시글 링크가 클립보드에 복사되었습니다! 🔗\n원하는 곳에 붙여넣어 친구들에게 공유해 보세요.')
   } catch (err) {
-    
     const textArea = document.createElement('textarea')
     textArea.value = currentUrl
     document.body.appendChild(textArea)
@@ -166,12 +211,47 @@ const shareToFacebook = () => {
   window.open(facebookUrl, '_blank', 'width=600,height=400,noopener,noreferrer')
 }
 
+const submitComment = () => {
+  if (!newAuthor.value.trim()) {
+    alert('닉네임을 입력해 주세요!')
+    return
+  }
+  if (!newContent.value.trim()) {
+    alert('댓글 내용을 입력해 주세요!')
+    return
+  }
+
+  const commentData = {
+    id: Date.now(),
+    author: newAuthor.value.trim(),
+    content: newContent.value.trim(),
+    createdAt: new Date().toISOString()
+  }
+
+  if (communityStore.addComment) {
+    communityStore.addComment(post.value.id, commentData)
+  } else {
+    if (!post.value.comments) {
+      post.value.comments = []
+    }
+    post.value.comments.push(commentData)
+    if (communityStore.savePosts) {
+      communityStore.savePosts()
+    }
+  }
+
+  newAuthor.value = ''
+  newContent.value = ''
+}
 
 onMounted(() => {
   const id = route.params.id
   const found = communityStore.getPostById(id)
   if (found) {
     post.value = found
+    if (!post.value.comments) {
+      post.value.comments = []
+    }
   }
 })
 </script>
@@ -328,6 +408,109 @@ onMounted(() => {
 }
 .facebook-btn:hover {
   background: #166fe5;
+}
+
+.comments-section {
+  margin-top: 40px;
+  border-top: 1px solid #ebdff5;
+  padding-top: 30px;
+  text-align: left;
+}
+.comments-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2f213f;
+  margin-bottom: 20px;
+}
+.comment-form {
+  background: #faf8fd;
+  border: 1px solid #ebdff5;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.comment-form-row {
+  margin-bottom: 10px;
+}
+.comment-input-author {
+  width: 180px;
+  background: #ffffff;
+  border: 1px solid #ebdff5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+}
+.comment-input-author:focus {
+  border-color: #9b7cff;
+}
+.comment-input-content {
+  width: 100%;
+  height: 70px;
+  background: #ffffff;
+  border: 1px solid #ebdff5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+.comment-input-content:focus {
+  border-color: #9b7cff;
+}
+.comment-submit-row {
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-comment-submit {
+  background: linear-gradient(90deg, #9b7cff, #ff8ab6);
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.comment-item {
+  background: #ffffff;
+  border: 1px solid #f0ecf5;
+  border-radius: 12px;
+  padding: 16px;
+}
+.comment-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.comment-item-author {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2f213f;
+}
+.comment-item-date {
+  font-size: 11px;
+  color: #b5a9ba;
+}
+.comment-item-content {
+  font-size: 13.5px;
+  color: #4f4255;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.comments-empty {
+  text-align: center;
+  padding: 30px 0;
+  font-size: 13.5px;
+  color: #b5a9ba;
 }
 
 .action-footer {

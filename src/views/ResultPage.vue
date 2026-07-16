@@ -88,7 +88,6 @@ import { useTourStore } from '../stores/tour'
 import LeafletMap from '../components/LeafletMap.vue' 
 import WeatherSummary from '../components/WeatherSummary.vue' 
 
-// 🌟 [추가] 캡처 기능 라이브러리 임포트
 import html2canvas from 'html2canvas'
 
 const router = useRouter()
@@ -140,7 +139,6 @@ const checkPreferences = () => {
   }
 }
 
-// AI 추천 코스 빌딩 요청
 const generateAICourse = async (userPrefs) => {
   try {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -256,7 +254,6 @@ const handleMarkerClick = (place) => {
   }
 }
 
-// 🌟 [새로 추가] html2canvas 이미지 저장 로직
 const downloadCourseImage = async () => {
   const captureArea = document.getElementById('capture-area')
   if (!captureArea) return
@@ -264,12 +261,11 @@ const downloadCourseImage = async () => {
   alert('📸 나만의 서울 여행 코스 이미지를 빌드하는 중입니다. 잠시만 기다려 주세요!')
 
   try {
-    // 지도 타일 및 외부 기상 아이콘 깨짐 방지를 위해 useCORS 옵션을 꼭 켜줍니다.
     const canvas = await html2canvas(captureArea, {
       useCORS: true,
       logging: false,
-      backgroundColor: '#fbf9ff', // 투명 방지를 위해 아늑한 배경색으로 고정
-      scale: 2 // 이미지 해상도를 2배로 올려 출력 시 글씨가 깨지지 않고 아주 선명하게 해줍니다.
+      backgroundColor: '#fbf9ff',
+      scale: 2
     })
 
     const imageUrl = canvas.toDataURL('image/png')
@@ -283,7 +279,6 @@ const downloadCourseImage = async () => {
   }
 }
 
-// 🌟 [새로 추가] 모바일/카카오톡 최적화 공유 로직 (Web Share API)
 const shareCourse = async () => {
   const shareData = {
     title: '🗺️ AI가 설계한 나만의 서울 맞춤 여행 코스',
@@ -291,7 +286,6 @@ const shareCourse = async () => {
     url: window.location.href
   }
 
-  // 모바일 브라우저 환경인 경우 (카톡, 인스타 등 네이티브 공유 다이얼로그 즉시 활성화)
   if (navigator.share) {
     try {
       await navigator.share(shareData)
@@ -299,7 +293,6 @@ const shareCourse = async () => {
       console.log('소셜 공유 취소 또는 중단됨', err)
     }
   } else {
-    // 데스크톱 크롬 등 Web Share 미지원 환경인 경우 링크 자동 복사 제공
     try {
       await navigator.clipboard.writeText(window.location.href)
       alert('🔗 링크가 성공적으로 클립보드에 복사되었습니다!\n카카오톡 대화방에 붙여넣기(Ctrl+V)해서 친구에게 바로 공유해 보세요!')
@@ -377,7 +370,6 @@ const goHome = () => {
   margin-bottom: 20px;
 }
 
-/* 🌟 [새로 추가] 상단 유틸리티 저장/공유 바 버튼 디자인 */
 .utility-bar {
   display: flex;
   justify-content: flex-end;
@@ -414,7 +406,6 @@ const goHome = () => {
   color: #ffffff;
 }
 
-/* 🌟 [새로 추가] 캡처용 박스 패딩 세부 조절 */
 .capture-box {
   padding: 10px;
   border-radius: 16px;
