@@ -14,10 +14,10 @@
         />
         <div class="hero-overlay"></div>
         <div class="hero-text-content">
-          <span class="badge-hero">SEOUL TRAVEL HUB</span>
-          <h2>💬 여행자 광장</h2>
-          <p>서울을 누비는 여행자들의 생생한 발걸음과 꿀팁이 머무는 곳</p>
-        </div>
+    <span class="badge-hero">SEOUL TRAVEL HUB</span>
+    <h2>{{ langStore.t('heroTitle') }}</h2>
+    <p>{{ langStore.t('heroDesc') }}</p>
+  </div>
       </div>
 
       <div class="category-tabs">
@@ -87,6 +87,8 @@ import { storeToRefs } from 'pinia'
 import { useCommunityStore } from '../stores/community'
 
 import plazaImg from '../assets/images/gwanghwa.jpg'
+import { useLanguageStore } from '../stores/language'
+const langStore = useLanguageStore()
 
 const router = useRouter()
 const communityStore = useCommunityStore()
