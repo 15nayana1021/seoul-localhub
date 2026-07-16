@@ -56,7 +56,7 @@ export const useChatbotStore = defineStore('chatbot', () => {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
+          model: import.meta.env.VITE_OPENAI_MODEL,
           messages: [
             { role: 'system', content: systemContext },
             ...messages.value.map(m => ({ role: m.role, content: m.content }))

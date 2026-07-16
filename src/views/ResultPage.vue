@@ -163,7 +163,7 @@ const generateAICourse = async (userPrefs) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
+        model: import.meta.env.VITE_OPENAI_MODEL,
         messages: [
           {
             role: 'system',
