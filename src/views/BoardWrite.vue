@@ -59,6 +59,26 @@
         </div>
 
         <div class="form-group">
+          <label>사진 첨부</label>
+          <div class="file-upload-wrapper">
+            <label class="file-upload-label">
+              <span class="upload-icon">📸</span>
+              <span class="upload-text">클릭하여 사진 선택하기</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                @change="handleFileChange" 
+                class="file-input-hidden"
+              />
+            </label>
+            <div v-if="imagePreview" class="preview-container">
+              <img :src="imagePreview" alt="미리보기" class="image-preview" />
+              <button type="button" @click="removeImage" class="btn-remove-img">✕ 사진 지우기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label>내용</label>
           <textarea 
             v-model="content" 
@@ -90,6 +110,25 @@ const password = ref('')
 const category = ref('attraction')
 const title = ref('')
 const content = ref('')
+const image = ref('')
+const imagePreview = ref('')
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      image.value = e.target.result
+      imagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const removeImage = () => {
+  image.value = ''
+  imagePreview.value = ''
+}
 
 const handleSubmit = () => {
   const newPost = {
@@ -99,6 +138,7 @@ const handleSubmit = () => {
     category: category.value,
     author: author.value.trim(),
     password: password.value.trim(),
+    image: image.value,
     createdAt: new Date().toISOString(),
     comments: []
   }
@@ -199,6 +239,71 @@ const goBack = () => {
 }
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: #9b7cff;
+}
+
+.file-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #faf8fd;
+  border: 2px dashed #ebdff5;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.file-upload-label:hover {
+  border-color: #9b7cff;
+  background: #f5eeff;
+}
+.upload-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+.upload-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #736077;
+}
+.file-input-hidden {
+  display: none;
+}
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #faf8fd;
+  border: 1px solid #ebdff5;
+  border-radius: 10px;
+}
+.image-preview {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.btn-remove-img {
+  background: rgba(255, 107, 107, 0.08);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-remove-img:hover {
+  background: #ff6b6b;
+  color: #ffffff;
 }
 
 .form-textarea {
