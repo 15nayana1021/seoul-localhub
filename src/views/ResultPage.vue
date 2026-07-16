@@ -16,7 +16,7 @@
       <header class="result-header">
         <span class="badge">AI CUSTOM COURSE</span>
         <h2>✨ AI가 설계한 나만의 서울 맞춤 여행 코스</h2>
-        <p class="muted">당신의 성향 설문 결과를 바탕으로 서울 공공데이터를 융합하여 특별한 하루 코스를 설계했습니다.</p>
+        <p class="muted">당신의 성향 설문 결과를 바탕으로 서울 공공데이터를 융합하여 특별한 코스를 설계했습니다.</p>
       </header>
 
       <div v-if="isLoading" class="loading-area">
