@@ -72,7 +72,7 @@
         @click="focusOnMap(place)"
       >
         <div class="place-body">
-          <span class="category-tag">{{ getCategoryLabel(place.category) }}</span>
+          <span class="category-tag">{{ getCategoryLabel(currentCategory) }}</span>
           <h3 class="place-title">{{ place.title }}</h3>
           <p class="place-addr" v-if="place.addr1">🚗 주소: {{ place.addr1 }}</p>
           <p class="place-tel" v-if="place.tel">📞 문의: {{ place.tel }}</p>
@@ -86,13 +86,13 @@
 
 <script setup>
 import { ref, computed, reactive, onBeforeUpdate, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
-import { useTourStore } from '../stores/tour' 
+import { useTourStore } from '../stores/tour' //
 import LeafletMap from '../components/LeafletMap.vue'
 
-const tourStore = useTourStore() 
+const tourStore = useTourStore() //
 
 const currentCategory = computed(() => tourStore.currentCategory)
-const filtered = computed(() => tourStore.currentItems) 
+const filtered = computed(() => tourStore.currentItems) //
 
 const selectedItem = ref(null) 
 const cardRefs = reactive(new Map())
@@ -103,6 +103,8 @@ const searchResults = ref([])
 const isDropdownOpen = ref(false)
 
 watch(searchQuery, (newQuery) => {
+  console.log('⌨️ 입력 중인 검색어:', newQuery)
+  
   const query = newQuery.trim().toLowerCase().replace(/\s+/g, '')
   if (!query) {
     searchResults.value = []
@@ -110,7 +112,7 @@ watch(searchQuery, (newQuery) => {
     return
   }
 
-  searchResults.value = (tourStore.tourData || []).filter(item => {
+  searchResults.value = (tourStore.allRawItems || []).filter(item => {
     const rawTitle = item.title || ''
     const rawAddr = item.addr1 || ''
 
@@ -119,6 +121,8 @@ watch(searchQuery, (newQuery) => {
 
     return titleNormalized.includes(query) || addrNormalized.includes(query)
   }).slice(0, 7)
+
+  console.log('🔍 검색 매칭 데이터 리스트:', searchResults.value)
 })
 
 const mapItems = computed(() => {
@@ -196,6 +200,7 @@ const focusOnMap = (place) => {
 
 const handleMarkerClick = (place) => {
   selectedItem.value = place
+  
   const uniqueId = place.id || place.title
   
   if (isSearchedAndNotListed.value) {
