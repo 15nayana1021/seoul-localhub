@@ -13,7 +13,6 @@
       </header>
 
       <form @submit.prevent="handleSubmit" class="write-form">
-        <!-- 카테고리 선택 -->
         <div class="form-group">
           <label for="category">카테고리</label>
           <select id="category" v-model="category" class="select-input" required>
@@ -27,7 +26,6 @@
           </select>
         </div>
 
-        <!-- 제목 입력 + 실시간 글자 수 제한 -->
         <div class="form-group">
           <div class="label-wrapper">
             <label for="title">제목</label>
@@ -45,7 +43,6 @@
           />
         </div>
 
-        <!-- 익명 게시글 비밀번호 입력 -->
         <div class="form-group">
           <label for="password">수정/삭제 비밀번호</label>
           <input 
@@ -58,7 +55,6 @@
           />
         </div>
 
-        <!-- 사진 첨부 -->
         <div class="form-group">
           <label>사진 첨부</label>
           <div class="file-upload-wrapper">
@@ -79,14 +75,12 @@
             <span v-if="imageName" class="file-name">{{ imageName }}</span>
           </div>
 
-          <!-- 업로드된 이미지 미리보기 -->
           <div v-if="imagePreview" class="preview-container">
             <img :src="imagePreview" alt="미리보기" class="image-preview" />
             <button type="button" class="btn-remove-img" @click="removeImage">❌ 삭제</button>
           </div>
         </div>
 
-        <!-- 내용 입력 + 실시간 글자 수 제한 -->
         <div class="form-group">
           <div class="label-wrapper">
             <label for="content">내용</label>
@@ -158,9 +152,7 @@ const removeImage = () => {
   document.getElementById('image-input').value = ''
 }
 
-// 🌟 유효성 검사 강화된 제출 핸들러
 const handleSubmit = () => {
-  // 공백 및 미입력 차단 필터링
   const cleanTitle = title.value.trim()
   const cleanContent = content.value.trim()
   const cleanPassword = password.value.trim()
@@ -186,7 +178,6 @@ const handleSubmit = () => {
     return
   }
 
-  // 데이터 등록 통신 호출
   communityStore.createPost({
     title: cleanTitle,
     content: cleanContent,
@@ -272,7 +263,6 @@ const goBack = () => {
   color: var(--text);
 }
 
-/* 🌟 글자 수 카운터 스타일 */
 .char-counter {
   font-size: 12px;
   color: #a394a8;

@@ -16,31 +16,26 @@
 
       <hr class="divider" />
 
-      <!-- 첨부 이미지 영역 -->
       <div v-if="post.image" class="detail-image-container">
         <img :src="post.image" alt="첨부 이미지" class="detail-image" />
       </div>
 
-      <!-- 🌟 [해결] 본문 텍스트 박스: 엔터 줄바꿈과 장문 줄바꿈 자동 적용 완료 -->
       <div class="detail-content">
         {{ post.content }}
       </div>
 
-      <!-- 하단 제어 바 -->
       <div class="action-footer">
         <button @click="goList" class="btn-list">📋 목록보기</button>
         <button @click="openDeleteModal" class="btn-delete">❌ 삭제하기</button>
       </div>
     </div>
 
-    <!-- 글이 존재하지 않을 때 -->
     <div class="card error-card" v-else>
       <span class="error-icon">⚠️</span>
       <h2>존재하지 않거나 삭제된 게시글입니다.</h2>
       <button @click="goList" class="btn-list">📋 목록으로 돌아가기</button>
     </div>
 
-    <!-- 🔒 익명 삭제용 패스워드 검증 모달 창 -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-card">
         <h3>🔑 글 삭제 인증</h3>
@@ -74,7 +69,6 @@ const communityStore = useCommunityStore()
 
 const post = ref(null)
 
-// 모달 제어 상태
 const showDeleteModal = ref(false)
 const inputPassword = ref('')
 
@@ -106,14 +100,12 @@ const closeDeleteModal = () => {
   showDeleteModal.value = false
 }
 
-// 🌟 비밀번호 대조 후 실제 데이터 삭제 핸들링
 const handleDelete = () => {
   if (!inputPassword.value.trim()) {
     alert('비밀번호를 입력해 주세요!')
     return
   }
 
-  // Pinia Store 내의 deletePost 액션으로 검증 호출
   const result = communityStore.deletePost(post.value.id, inputPassword.value)
 
   if (result.success) {
@@ -219,14 +211,13 @@ onMounted(() => {
   object-fit: cover;
 }
 
-/* 🌟 줄바꿈 및 한글 줄넘김 방지 핵심 CSS 스타일링 기법 적용 */
 .detail-content {
   text-align: left;
   font-size: 15px;
   line-height: 1.8;
   color: #3b3042;
-  white-space: pre-wrap;   /* 엔터 개행 보존 구현 */
-  word-break: break-all;   /* 긴 영단어 및 가로 한계 돌파 방지 */
+  white-space: pre-wrap;
+  word-break: break-all;
   min-height: 150px;
 }
 
@@ -263,7 +254,6 @@ onMounted(() => {
   color: white;
 }
 
-/* 🔒 패스워드 팝업 모달 CSS */
 .modal-overlay {
   position: fixed;
   inset: 0;
