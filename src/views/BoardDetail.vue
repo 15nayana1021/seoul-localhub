@@ -10,6 +10,7 @@
         <span class="category-badge">{{ getCategoryLabel(post.category) }}</span>
         <h2 class="detail-title">{{ post.title }}</h2>
         <p class="detail-meta">
+          <span class="detail-author">👤 {{ post.author || '익명 여행자' }}</span>
           <span>📅 {{ formatDate(post.createdAt) }}</span>
         </p>
       </header>
@@ -27,7 +28,7 @@
       <div class="share-section">
         <span class="share-title">📢 이 여행기 공유하기</span>
         <div class="share-buttons">
-          <button @click="copyLink" class="btn-share copy-btn" title="링크 복사">
+          <button @click="copyLink" class="btn-share copy-btn" title="リンク 복사">
             🔗 링크 복사
           </button>
           <button @click="shareToTwitter" class="btn-share twitter-btn" title="X 공유">
@@ -314,6 +315,8 @@ onMounted(() => {
   font-size: 12px;
   color: #a394a8;
   margin: 0;
+  display: flex;
+  gap: 12px;
 }
 
 .divider {

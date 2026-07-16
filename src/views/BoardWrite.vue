@@ -7,16 +7,37 @@
 
     <div class="card write-card">
       <header class="write-header">
-        <span class="badge">COMMUNITY</span>
         <h2>✍️ 여행 이야기 기록하기</h2>
-        <p class="muted">서울 여행의 소중한 추억과 꿀팁을 공유해 주세요.</p>
+        <p>서울에서의 특별했던 추억을 다른 여행자들과 공유해 보세요.</p>
       </header>
 
       <form @submit.prevent="handleSubmit" class="write-form">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>익명 닉네임</label>
+            <input 
+              type="text" 
+              v-model="author" 
+              placeholder="닉네임 입력" 
+              required
+              class="form-input"
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label>비밀번호 (삭제용)</label>
+            <input 
+              type="password" 
+              v-model="password" 
+              placeholder="비밀번호 4자리" 
+              required
+              class="form-input"
+            />
+          </div>
+        </div>
+
         <div class="form-group">
-          <label for="category">카테고리</label>
-          <select id="category" v-model="category" class="select-input" required>
-            <option value="all">일반/전체</option>
+          <label>카테고리</label>
+          <select v-model="category" required class="form-select">
             <option value="attraction">관광지</option>
             <option value="culture">문화/예술</option>
             <option value="festival">축제/행사</option>
@@ -27,79 +48,28 @@
         </div>
 
         <div class="form-group">
-          <div class="label-wrapper">
-            <label for="title">제목</label>
-            <span :class="['char-counter', { 'warning-text': title.length >= 30 }]">
-              {{ title.length }} / 30자
-            </span>
-          </div>
+          <label>제목</label>
           <input 
             type="text" 
-            id="title" 
             v-model="title" 
-            placeholder="제목을 입력해 주세요 (최대 30자)" 
-            maxlength="30"
+            placeholder="제목을 입력해 주세요" 
             required
+            class="form-input"
           />
         </div>
 
         <div class="form-group">
-          <label for="password">수정/삭제 비밀번호</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
-            placeholder="수정 및 삭제 시 인증에 사용할 비밀번호 (4자 이상)" 
-            minlength="4"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label>사진 첨부</label>
-          <div class="file-upload-wrapper">
-            <input 
-              type="file" 
-              id="image-input" 
-              accept="image/*" 
-              @change="handleImageUpload" 
-              style="display: none;"
-            />
-            <button 
-              type="button" 
-              class="btn-file-select" 
-              @click="triggerFileInput"
-            >
-              🖼️ 사진 선택하기
-            </button>
-            <span v-if="imageName" class="file-name">{{ imageName }}</span>
-          </div>
-
-          <div v-if="imagePreview" class="preview-container">
-            <img :src="imagePreview" alt="미리보기" class="image-preview" />
-            <button type="button" class="btn-remove-img" @click="removeImage">❌ 삭제</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="label-wrapper">
-            <label for="content">내용</label>
-            <span :class="['char-counter', { 'warning-text': content.length >= 1000 }]">
-              {{ content.length }} / 1000자
-            </span>
-          </div>
+          <label>내용</label>
           <textarea 
-            id="content" 
             v-model="content" 
-            rows="8" 
-            placeholder="따뜻한 여행 후기나 유용한 정보들을 자유롭게 적어주세요. (최대 1000자)" 
-            maxlength="1000"
+            placeholder="서울 여행의 생생한 꿀팁과 경험담을 적어주세요." 
             required
+            class="form-textarea"
           ></textarea>
         </div>
 
-        <div class="action-buttons">
-          <button type="button" @click="goBack" class="btn-back">취소</button>
+        <div class="form-actions">
+          <button type="button" @click="goBack" class="btn-cancel">취소</button>
           <button type="submit" class="btn-submit">등록하기</button>
         </div>
       </form>
@@ -115,77 +85,25 @@ import { useCommunityStore } from '../stores/community'
 const router = useRouter()
 const communityStore = useCommunityStore()
 
+const author = ref('')
+const password = ref('')
+const category = ref('attraction')
 const title = ref('')
 const content = ref('')
-const category = ref('all')
-const password = ref('')
-
-const imagePreview = ref('')
-const imageName = ref('')
-
-const triggerFileInput = () => {
-  document.getElementById('image-input').click()
-}
-
-const handleImageUpload = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  if (file.size > 2 * 1024 * 1024) {
-    alert('이미지 파일은 최대 2MB까지만 업로드할 수 있습니다.')
-    event.target.value = ''
-    return
-  }
-
-  imageName.value = file.name
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    imagePreview.value = e.target.result
-  }
-  reader.readAsDataURL(file)
-}
-
-const removeImage = () => {
-  imagePreview.value = ''
-  imageName.value = ''
-  document.getElementById('image-input').value = ''
-}
 
 const handleSubmit = () => {
-  const cleanTitle = title.value.trim()
-  const cleanContent = content.value.trim()
-  const cleanPassword = password.value.trim()
-
-  if (!cleanTitle) {
-    alert('제목을 올바르게 입력해 주세요! (공백 제외)')
-    return
-  }
-  if (cleanTitle.length > 30) {
-    alert('제목은 최대 30자까지만 입력이 가능합니다.')
-    return
-  }
-  if (!cleanContent) {
-    alert('내용을 올바르게 기재해 주세요! (공백 제외)')
-    return
-  }
-  if (cleanContent.length > 1000) {
-    alert('내용은 최대 1000자까지만 입력이 가능합니다.')
-    return
-  }
-  if (cleanPassword.length < 4) {
-    alert('비밀번호는 안전을 위해 최소 4자 이상이어야 합니다.')
-    return
-  }
-
-  communityStore.createPost({
-    title: cleanTitle,
-    content: cleanContent,
-    password: cleanPassword,
+  const newPost = {
+    id: Date.now().toString(),
+    title: title.value.trim(),
+    content: content.value.trim(),
     category: category.value,
-    image: imagePreview.value
-  })
+    author: author.value.trim(),
+    password: password.value.trim(),
+    createdAt: new Date().toISOString(),
+    comments: []
+  }
 
+  communityStore.addPost(newPost)
   router.push('/board')
 }
 
@@ -200,45 +118,46 @@ const goBack = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 20px;
-  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  padding: 60px 20px;
+  background: #f5f2f9;
   position: relative;
   overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
-  color: var(--text);
+  color: #2f213f;
 }
 
 .blobs { position: absolute; inset: 0; pointer-events: none; }
-.blob { position: absolute; filter: blur(36px); opacity: 0.95; }
-.b1 { width: 360px; height: 360px; left: -80px; top: -60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.4), transparent 40%); }
-.b2 { width: 280px; height: 280px; right: -60px; top: 40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 40%); }
+.blob { position: absolute; filter: blur(40px); opacity: 0.9; }
+.b1 { width: 400px; height: 400px; left: -100px; top: -100px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.35), transparent 50%); }
+.b2 { width: 350px; height: 350px; right: -80px; top: 80px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 50%); }
 
 .card {
   width: 100%;
-  max-width: 650px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 22px;
-  padding: 32px;
-  box-shadow: 0 14px 40px rgba(24,16,40,0.08);
-  border: 1px solid rgba(155,124,255,0.08);
-  backdrop-filter: blur(6px);
+  max-width: 680px;
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 40px; 
+  box-shadow: 0 16px 45px rgba(24, 16, 40, 0.08);
+  border: 1px solid #ebdff5;
   position: relative;
   z-index: 2;
 }
 
-.write-header { text-align: center; margin-bottom: 24px; }
-.badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  color: #9b7cff;
-  background: rgba(155, 124, 255, 0.08);
-  padding: 4px 12px;
-  border-radius: 999px;
-  margin-bottom: 12px;
+.write-header {
+  text-align: center;
+  margin-bottom: 32px;
 }
-.write-header h2 { font-size: 24px; font-weight: 700; color: var(--text); margin: 0; }
-.muted { font-size: 13px; color: #736077; margin-top: 8px; }
+.write-header h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #2f213f;
+  margin: 0 0 8px;
+}
+.write-header p {
+  font-size: 14px;
+  color: #736077;
+  margin: 0;
+}
 
 .write-form {
   display: flex;
@@ -247,116 +166,60 @@ const goBack = () => {
   text-align: left;
 }
 
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+.flex-1 {
+  flex: 1;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.label-wrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .form-group label {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text);
+  color: #4f4255;
 }
 
-.char-counter {
-  font-size: 12px;
-  color: #a394a8;
-  font-weight: 500;
-}
-.warning-text {
-  color: #ff6b6b !important;
-  font-weight: 700;
-}
-
-.form-group input[type="text"], 
-.form-group input[type="password"], 
-.form-group textarea,
-.select-input {
-  background: #ffffff;
-  border: 1px solid rgba(155, 124, 255, 0.15);
-  padding: 12px 16px;
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: #faf8fd;
+  border: 1px solid #ebdff5;
   border-radius: 10px;
+  padding: 12px 14px;
   font-size: 14px;
-  color: var(--text);
+  color: #2f213f;
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.2s;
 }
-.form-group input[type="text"]:focus, 
-.form-group input[type="password"]:focus, 
-.form-group textarea:focus,
-.select-input:focus {
+.form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: #9b7cff;
 }
 
-.file-upload-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.btn-file-select {
-  background: #ffffff;
-  border: 1px solid #9b7cff;
-  color: #9b7cff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-file-select:hover {
-  background: rgba(155, 124, 255, 0.05);
-}
-.file-name {
-  font-size: 13px;
-  color: #736077;
+.form-textarea {
+  height: 200px;
+  resize: none;
+  line-height: 1.6;
 }
 
-.preview-container {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  margin-top: 8px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(155, 124, 255, 0.15);
-}
-.image-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.btn-remove-img {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.action-buttons {
+.form-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
+  gap: 12px;
   margin-top: 12px;
 }
-.btn-back {
+
+.btn-cancel {
   background: #f3f0f5;
   color: #4f4255;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
+  padding: 12px 24px;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -365,10 +228,11 @@ const goBack = () => {
   background: linear-gradient(90deg, #9b7cff, #ff8ab6);
   color: #ffffff;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(155, 124, 255, 0.2);
 }
 </style>

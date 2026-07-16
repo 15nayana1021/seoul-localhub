@@ -51,7 +51,7 @@
               <div class="post-body">
                 <div class="post-top-info">
                   <span :class="['category-tag', post.category]">{{ getCategoryLabel(post.category) }}</span>
-                  <span class="author-badge">👤 익명 여행자</span>
+                  <span class="author-badge">👤 {{ post.author || '익명 여행자' }}</span>
                 </div>
                 
                 <h3 class="post-title">{{ post.title }}</h3>
@@ -159,7 +159,6 @@ const goWrite = () => {
 .blob { position: absolute; filter: blur(40px); opacity: 0.9; }
 .b1 { width: 400px; height: 400px; left: -100px; top: -100px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.35), transparent 50%); }
 .b2 { width: 350px; height: 350px; right: -80px; top: 80px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 50%); }
-
 
 .card {
   width: 100%;
