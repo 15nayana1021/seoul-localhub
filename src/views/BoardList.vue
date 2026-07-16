@@ -6,11 +6,10 @@
     </div>
 
     <div class="card board-card">
-      <!-- 🌟 [수정] 여행자 광장 테마에 어울리는 활기차고 감성적인 서울 도심 여행자 배너로 교체 -->
       <div class="board-hero">
         <img 
-          src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1000&q=80" 
-          alt="Seoul Travel Plaza" 
+          :src="plazaImg" 
+          alt="Gwanghwamun Plaza Seoul" 
           class="hero-bg-img" 
         />
         <div class="hero-overlay"></div>
@@ -21,7 +20,6 @@
         </div>
       </div>
 
-      <!-- 📂 카테고리 탭 -->
       <div class="category-tabs">
         <button 
           v-for="tab in tabs" 
@@ -33,49 +31,46 @@
         </button>
       </div>
 
-      <!-- 📋 리스트 그리드 -->
-      <div class="posts-grid" v-if="posts.length > 0">
-        <article
-          v-for="post in posts"
-          :key="post.id"
-          @click="goDetail(post.id)"
-          class="post-card"
-        >
-          <div class="post-layout">
-            <!-- 🖼️ [수정] 사용자가 이미지를 직접 등록한 경우에만 썸네일 노출, 없을 때는 공간을 차지하지 않습니다. -->
-            <div v-if="post.image" class="list-thumbnail-container">
-              <img 
-                :src="post.image" 
-                alt="썸네일" 
-                class="list-thumbnail" 
-              />
-            </div>
-
-            <!-- 정보 및 본문 영역 (썸네일이 없으면 카드를 넓게 꽉 채웁니다) -->
-            <div class="post-body">
-              <div class="post-top-info">
-                <span :class="['category-tag', post.category]">{{ getCategoryLabel(post.category) }}</span>
-                <span class="author-badge">👤 익명 여행자</span>
+      <transition name="list-fade" mode="out-in">
+        <div class="posts-grid" v-if="posts.length > 0" :key="currentCategory">
+          <article
+            v-for="post in posts"
+            :key="post.id"
+            @click="goDetail(post.id)"
+            class="post-card"
+          >
+            <div class="post-layout">
+              <div v-if="post.image" class="list-thumbnail-container">
+                <img 
+                  :src="post.image" 
+                  alt="썸네일" 
+                  class="list-thumbnail" 
+                />
               </div>
-              
-              <h3 class="post-title">{{ post.title }}</h3>
-              <p class="post-excerpt">{{ truncateText(post.content, 120) }}</p> <!-- 텍스트 공간이 넓어져 글자수 제한을 120자로 상향 -->
-              
-              <div class="post-meta-footer">
-                <span class="meta-item">📅 {{ formatDate(post.createdAt) }}</span>
+
+              <div class="post-body">
+                <div class="post-top-info">
+                  <span :class="['category-tag', post.category]">{{ getCategoryLabel(post.category) }}</span>
+                  <span class="author-badge">👤 익명 여행자</span>
+                </div>
+                
+                <h3 class="post-title">{{ post.title }}</h3>
+                <p class="post-excerpt">{{ truncateText(post.content, 120) }}</p>
+                
+                <div class="post-meta-footer">
+                  <span class="meta-item">📅 {{ formatDate(post.createdAt) }}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
 
-      <!-- 작성된 글이 없을 때 -->
-      <div v-else class="empty-state">
-        <div class="empty-icon">📂</div>
-        <p class="muted">아직 이 카테고리에 작성된 게시글이 없습니다.<br>첫 번째 이야기의 주인공이 되어보세요!</p>
-      </div>
+        <div v-else class="empty-state" :key="'empty-' + currentCategory">
+          <div class="empty-icon">📂</div>
+          <p class="muted">아직 이 카테고리에 작성된 게시글이 없습니다.<br>첫 번째 이야기의 주인공이 되어보세요!</p>
+        </div>
+      </transition>
 
-      <!-- 우측 하단 플로팅 글쓰기 버튼 -->
       <div class="write-action-container">
         <button @click="goWrite" class="btn-write">
           <span class="btn-icon">✍️</span> 새 글 쓰기
@@ -90,6 +85,8 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCommunityStore } from '../stores/community'
+
+import plazaImg from '../assets/images/gwanghwa.jpg'
 
 const router = useRouter()
 const communityStore = useCommunityStore()
@@ -151,7 +148,7 @@ const goWrite = () => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  background: #f5f2f9;
   position: relative;
   overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
@@ -163,21 +160,21 @@ const goWrite = () => {
 .b1 { width: 400px; height: 400px; left: -100px; top: -100px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.35), transparent 50%); }
 .b2 { width: 350px; height: 350px; right: -80px; top: 80px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 50%); }
 
+
 .card {
   width: 100%;
   max-width: 780px;
-  background: rgba(255, 255, 255, 0.92);
+  background: #ffffff;
   border-radius: 26px;
   padding: 0 40px 40px; 
-  box-shadow: 0 16px 45px rgba(24,16,40,0.06);
-  border: 1px solid rgba(155,124,255,0.06);
+  box-shadow: 0 16px 45px rgba(24, 16, 40, 0.08);
+  border: 1px solid #ebdff5;
   backdrop-filter: blur(8px);
   position: relative;
   z-index: 2;
   overflow: hidden;
 }
 
-/* 상단 감성 여행 비주얼 배너 */
 .board-hero {
   position: relative;
   width: calc(100% + 80px);
@@ -194,7 +191,7 @@ const goWrite = () => {
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(35, 23, 48, 0.1) 0%, rgba(35, 23, 48, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(35, 23, 48, 0.1) 0%, rgba(35, 23, 48, 0.6) 100%);
 }
 .hero-text-content {
   position: absolute;
@@ -230,7 +227,6 @@ const goWrite = () => {
   font-weight: 500;
 }
 
-/* 카테고리 탭 */
 .category-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -240,7 +236,7 @@ const goWrite = () => {
 }
 .tab-btn {
   background: #ffffff;
-  border: 1px solid rgba(155, 124, 255, 0.12);
+  border: 1px solid rgba(155, 124, 255, 0.2); 
   color: #615066;
   padding: 9px 18px;
   border-radius: 999px;
@@ -258,26 +254,26 @@ const goWrite = () => {
   transform: translateY(-1px);
 }
 
-/* 목록 카드 */
 .posts-grid {
   display: flex;
   flex-direction: column;
   gap: 18px;
   margin-bottom: 28px;
 }
+
 .post-card {
   background: #ffffff;
   border-radius: 18px;
   padding: 22px;
-  border: 1px solid rgba(155, 124, 255, 0.06);
-  box-shadow: 0 6px 20px rgba(24,16,40,0.02);
+  border: 1px solid #ebdff5;
+  box-shadow: 0 6px 16px rgba(155, 124, 255, 0.04); 
   cursor: pointer;
   transition: all 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .post-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(155, 124, 255, 0.09);
-  border-color: rgba(155, 124, 255, 0.18);
+  box-shadow: 0 12px 28px rgba(155, 124, 255, 0.12); 
+  border-color: #9b7cff; 
 }
 
 .post-layout {
@@ -286,14 +282,13 @@ const goWrite = () => {
   align-items: center;
 }
 
-/* 썸네일 컨테이너 */
 .list-thumbnail-container {
   width: 95px;
   height: 95px;
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   position: relative;
 }
 .list-thumbnail {
@@ -320,7 +315,6 @@ const goWrite = () => {
   margin-bottom: 8px;
 }
 
-/* 카테고리별 전용 파스텔 컬러 코드칩 */
 .category-tag {
   display: inline-block;
   font-size: 10.5px;
@@ -367,7 +361,6 @@ const goWrite = () => {
   color: #b5a9ba;
 }
 
-/* 비어있는 화면 */
 .empty-state {
   padding: 60px 20px;
   text-align: center;
@@ -382,7 +375,6 @@ const goWrite = () => {
   opacity: 0.6;
 }
 
-/* 우하단 플로팅 글쓰기 버튼 */
 .write-action-container {
   display: flex;
   justify-content: flex-end;
@@ -408,5 +400,20 @@ const goWrite = () => {
 }
 .btn-icon {
   font-size: 16px;
+}
+
+.list-fade-enter-active,
+.list-fade-leave-active {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
+.list-fade-enter-from {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.list-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

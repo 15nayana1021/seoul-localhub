@@ -24,6 +24,21 @@
         {{ post.content }}
       </div>
 
+      <div class="share-section">
+        <span class="share-title">📢 이 여행기 공유하기</span>
+        <div class="share-buttons">
+          <button @click="copyLink" class="btn-share copy-btn" title="링크 복사">
+            🔗 링크 복사
+          </button>
+          <button @click="shareToTwitter" class="btn-share twitter-btn" title="X 공유">
+            𝕏 공유
+          </button>
+          <button @click="shareToFacebook" class="btn-share facebook-btn" title="페이스북 공유">
+            🔵 페이스북
+          </button>
+        </div>
+      </div>
+
       <div class="action-footer">
         <button @click="goList" class="btn-list">📋 목록보기</button>
         <button @click="openDeleteModal" class="btn-delete">❌ 삭제하기</button>
@@ -121,6 +136,37 @@ const goList = () => {
   router.push('/board')
 }
 
+const copyLink = async () => {
+  const currentUrl = window.location.href
+  try {
+    await navigator.clipboard.writeText(currentUrl)
+    alert('게시글 링크가 클립보드에 복사되었습니다! 🔗\n원하는 곳에 붙여넣어 친구들에게 공유해 보세요.')
+  } catch (err) {
+    
+    const textArea = document.createElement('textarea')
+    textArea.value = currentUrl
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    alert('게시글 링크가 복사되었습니다! 🔗')
+  }
+}
+
+const shareToTwitter = () => {
+  const text = `[서울 로컬허브] "${post.value.title}" 여행기를 확인해 보세요!`
+  const url = window.location.href
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
+  window.open(twitterUrl, '_blank', 'width=600,height=400,noopener,noreferrer')
+}
+
+const shareToFacebook = () => {
+  const url = window.location.href
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+  window.open(facebookUrl, '_blank', 'width=600,height=400,noopener,noreferrer')
+}
+
+
 onMounted(() => {
   const id = route.params.id
   const found = communityStore.getPostById(id)
@@ -137,7 +183,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 48px 20px;
-  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  background: #f5f2f9;
   position: relative;
   overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
@@ -152,11 +198,11 @@ onMounted(() => {
 .card {
   width: 100%;
   max-width: 700px;
-  background: rgba(255, 255, 255, 0.9);
+  background: #ffffff;
   border-radius: 22px;
   padding: 36px;
-  box-shadow: 0 14px 40px rgba(24,16,40,0.08);
-  border: 1px solid rgba(155,124,255,0.08);
+  box-shadow: 0 14px 40px rgba(24, 16, 40, 0.08);
+  border: 1px solid #ebdff5;
   backdrop-filter: blur(6px);
   position: relative;
   z-index: 2;
@@ -216,15 +262,78 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.8;
   color: #3b3042;
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre-wrap;   
+  word-break: break-all;   
   min-height: 150px;
+}
+
+.share-section {
+  margin-top: 40px;
+  padding: 20px;
+  background: #faf8fd;
+  border-radius: 16px;
+  border: 1px solid #ebdff5;
+  text-align: center;
+}
+.share-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #615066;
+  margin-bottom: 14px;
+}
+.share-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-share {
+  border: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+.btn-share:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.copy-btn {
+  background: #ffffff;
+  color: #9b7cff;
+  border: 1px solid rgba(155, 124, 255, 0.3);
+}
+.copy-btn:hover {
+  background: rgba(155, 124, 255, 0.04);
+  border-color: #9b7cff;
+}
+.twitter-btn {
+  background: #111111;
+  color: #ffffff;
+}
+.twitter-btn:hover {
+  background: #2a2a2a;
+}
+.facebook-btn {
+  background: #1877f2;
+  color: #ffffff;
+}
+.facebook-btn:hover {
+  background: #166fe5;
 }
 
 .action-footer {
   display: flex;
   justify-content: space-between;
-  margin-top: 36px;
+  margin-top: 32px;
   border-top: 1px solid rgba(155, 124, 255, 0.08);
   padding-top: 20px;
 }

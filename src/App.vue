@@ -8,7 +8,11 @@
     </nav>
 
     <div class="p-4">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </RouterView>
     </div>
 
     <TravelChatbot />
@@ -25,27 +29,27 @@ import TravelChatbot from './components/TravelChatbot.vue';
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-1, #fffaf6), #fffdf8);
   font-family: var(--sans, system-ui, -apple-system, sans-serif);
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 nav.p-4 {
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  padding:18px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 18px;
   background: linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
   backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(155,124,255,0.07);
 }
 
 nav.p-4 .nav-link {
-  background: linear-gradient(90deg,#9b7cff,#ff8ab6);
-  color:#fff;
+  background: linear-gradient(90deg, #9b7cff, #ff8ab6);
+  color: #fff;
   text-decoration: none;
-  padding:8px 14px;
-  border-radius:999px;
-  cursor:pointer;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   display: inline-flex;
@@ -67,4 +71,19 @@ nav.p-4 .router-link-active {
 }
 
 .p-4 { padding: 1rem; }
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
 </style>
