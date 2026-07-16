@@ -14,10 +14,10 @@
         />
         <div class="hero-overlay"></div>
         <div class="hero-text-content">
-    <span class="badge-hero">SEOUL TRAVEL HUB</span>
-    <h2>{{ langStore.t('heroTitle') }}</h2>
-    <p>{{ langStore.t('heroDesc') }}</p>
-  </div>
+          <span class="badge-hero">SEOUL TRAVEL HUB</span>
+          <h2>💬 여행자 광장</h2>
+          <p>서울을 누비는 여행자들의 생생한 발걸음과 꿀팁이 머무는 곳</p>
+        </div>
       </div>
 
       <div class="category-tabs">
@@ -51,7 +51,7 @@
               <div class="post-body">
                 <div class="post-top-info">
                   <span :class="['category-tag', post.category]">{{ getCategoryLabel(post.category) }}</span>
-                  <span class="author-badge">👤 {{ post.author || '익명 여행자' }}</span>
+                  <span class="author-badge">👤 익명 여행자</span>
                 </div>
                 
                 <h3 class="post-title">{{ post.title }}</h3>
@@ -87,8 +87,6 @@ import { storeToRefs } from 'pinia'
 import { useCommunityStore } from '../stores/community'
 
 import plazaImg from '../assets/images/gwanghwa.jpg'
-import { useLanguageStore } from '../stores/language'
-const langStore = useLanguageStore()
 
 const router = useRouter()
 const communityStore = useCommunityStore()
@@ -161,6 +159,7 @@ const goWrite = () => {
 .blob { position: absolute; filter: blur(40px); opacity: 0.9; }
 .b1 { width: 400px; height: 400px; left: -100px; top: -100px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.35), transparent 50%); }
 .b2 { width: 350px; height: 350px; right: -80px; top: 80px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 50%); }
+
 
 .card {
   width: 100%;
