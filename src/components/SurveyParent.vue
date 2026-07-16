@@ -52,9 +52,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import SurveyDateSection from './SurveyDateSection.vue';
-import SurveyOptionSection from './SurveyOptionSection.vue';
-import SurveyMbtiSection from './SurveyMbtiSection.vue';
+
+import SurveyDateSection from '../components/SurveyDateSection.vue';
+import SurveyOptionSection from '../components/SurveyOptionSection.vue';
+import SurveyMbtiSection from '../components/SurveyMbtiSection.vue';
 
 const router = useRouter();
 
@@ -95,7 +96,6 @@ watch([startDate, endDate], () => {
 });
 
 const submitSurvey = () => {
-  // 필수 선택값 예외 처리 (선택 안 하면 넘어가기 방지)
   if (!startDate.value || !endDate.value || !gender.value || !ageGroup.value || !companion.value) {
     alert('모든 여행 정보를 빠짐없이 선택 및 입력해 주세요! 😊');
     return;
@@ -111,11 +111,8 @@ const submitSurvey = () => {
     stayText: stayText.value
   };
 
-  // 로컬스토리지에 안전하게 1단계 데이터 저장
-  localStorage.setItem('surveyData', JSON.stringify(surveyData)); //
-  
-  // 🌟 2단계 성향 질문 페이지(followup)로 유연하게 이동
-  router.push({ name: 'survey-followup' }); //
+  localStorage.setItem('surveyData', JSON.stringify(surveyData));
+  router.push({ name: 'survey-followup' });
 };
 </script>
 
@@ -126,17 +123,17 @@ const submitSurvey = () => {
   justify-content: center;
   align-items: center;
   padding: 48px 16px;
-  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  background-color: #e2daf0; 
 }
 
 .card {
   width: 100%;
-  max-width: 680px; /* 좀 더 아기자기한 폭으로 조절 */
+  max-width: 680px;
   background: #ffffff;
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 18px 50px rgba(24, 16, 40, 0.05);
-  border: 1px solid rgba(155, 124, 255, 0.08);
+  box-shadow: 0 20px 48px rgba(35, 23, 48, 0.15); 
+  border: 2px solid #d1c1eb; 
   position: relative;
 }
 
@@ -164,7 +161,12 @@ const submitSurvey = () => {
   gap: 20px;
 }
 
-/* 🌟 이미지처럼 버튼을 오른쪽 아래에 배치하기 위한 컨테이너 */
+.survey-form :deep(> *) {
+  background-color: #f8f5fc !important;
+  border: 1px solid #dcd1f0 !important;
+  box-shadow: inset 0 2px 4px rgba(155, 124, 255, 0.02) !important;
+}
+
 .submit-btn-wrapper {
   display: flex;
   justify-content: flex-end;
@@ -191,4 +193,4 @@ const submitSurvey = () => {
 .submit-btn:active {
   transform: scale(0.98);
 }
-</style>  
+</style>

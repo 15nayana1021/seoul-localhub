@@ -6,6 +6,7 @@
         <p class="muted">여행 성향을 더 정확히 파악하기 위해 몇 가지 질문을 드립니다.</p>
       </header>
 
+      <!-- 📈 상단 진행률 프로그레스 바 -->
       <div class="progress-container">
         <div class="progress-bar-wrapper">
           <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
@@ -15,7 +16,18 @@
         </span>
       </div>
 
+      <!-- ❓ 현재 진행 단계의 단일 질문 박스 -->
       <div class="question-box">
+        
+        <!-- 🌟 로컬에서 로드한 질문 테마별 일러스트/사진 뷰어 -->
+        <div class="question-image-wrapper">
+          <img 
+            :src="currentQuestion.image" 
+            :alt="currentQuestion.title" 
+            class="question-theme-img" 
+          />
+        </div>
+
         <h2 class="question-title">{{ currentQuestion.title }}</h2>
         
         <div class="option-list">
@@ -31,6 +43,7 @@
         </div>
       </div>
 
+      <!-- 🧭 하단 이동 컨트롤 버튼 영역 -->
       <div class="navigation-buttons">
         <button class="btn-prev" @click="handlePrev">
           {{ currentStep === 0 ? '이전 단계' : '이전 질문' }}
@@ -51,33 +64,47 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+// 🌟 [추가] 로컬 에셋 폴더에서 직접 이미지를 안전하게 임포트합니다.
+// 확장자가 다를 경우(.png 등) 파일명 끝부분을 알맞게 수정해 주세요!
+import waitingImg from '../assets/images/waiting.jpg'
+import vibeImg from '../assets/images/vibe.jpg'
+import energyImg from '../assets/images/energy.jpg'
+import snsImg from '../assets/images/sns.jpg'
+import placeTypeImg from '../assets/images/placeType.jpg'
+
 const router = useRouter()
 
+// 🌟 [수정] 외부 URL 대신 임포트한 로컬 이미지 변수명으로 변경 완료!
 const questions = [
   {
     id: 'waiting',
     title: '맛집에 1시간 기다려도 괜찮다',
-    options: ['O', 'X']
+    options: ['O', 'X'],
+    image: waitingImg
   },
   {
     id: 'vibe',
     title: '맛집 유형',
-    options: ['관광객 맛집', '로컬 맛집']
+    options: ['관광객 맛집', '로컬 맛집'],
+    image: vibeImg
   },
   {
     id: 'energy',
     title: '여행 스타일',
-    options: ['다리 부서져도 2만 보', '숙소/카페 중심 5천 보']
+    options: ['다리 부서져도 2만 보', '숙소/카페 중심 5천 보'],
+    image: energyImg
   },
   {
     id: 'sns',
     title: '여행 중 인스타 스토리 10개 이상 올린다',
-    options: ['O', 'X']
+    options: ['O', 'X'],
+    image: snsImg
   },
   {
     id: 'placeType',
     title: '사람이 많더라도',
-    options: ['유명한 관광지', '고즈넉한 동네 거리']
+    options: ['유명한 관광지', '고즈넉한 동네 거리'],
+    image: placeTypeImg
   }
 ]
 
@@ -92,7 +119,6 @@ const answers = ref({
 })
 
 const currentQuestion = computed(() => questions[currentStep.value])
-
 const progressPercentage = computed(() => ((currentStep.value + 1) / questions.length) * 100)
 
 const selectOption = (option) => {
@@ -109,7 +135,7 @@ const handlePrev = () => {
   if (currentStep.value > 0) {
     currentStep.value--
   } else {
-    router.push('/survey') //[cite: 4]
+    router.push('/survey')
   }
 }
 
@@ -124,7 +150,7 @@ const handleNext = () => {
 }
 
 const submitSurvey = () => {
-  localStorage.setItem('userPreferences', JSON.stringify(answers.value)) //[cite: 6]
+  localStorage.setItem('userPreferences', JSON.stringify(answers.value))
   router.push('/result')
 }
 </script>
@@ -136,7 +162,7 @@ const submitSurvey = () => {
   justify-content: center;
   align-items: center;
   padding: 48px 16px;
-  background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
+  background: #f5f2f9;
 }
 
 .card {
@@ -145,8 +171,8 @@ const submitSurvey = () => {
   background: #ffffff;
   border-radius: 24px;
   padding: 36px;
-  box-shadow: 0 18px 50px rgba(24, 16, 40, 0.05);
-  border: 1px solid rgba(155, 124, 255, 0.08);
+  box-shadow: 0 16px 45px rgba(24, 16, 40, 0.08);
+  border: 1px solid #ebdff5;
   box-sizing: border-box;
 }
 
@@ -172,7 +198,7 @@ const submitSurvey = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 36px;
+  margin-bottom: 30px;
 }
 .progress-bar-wrapper {
   flex-grow: 1;
@@ -183,7 +209,7 @@ const submitSurvey = () => {
 }
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #b286ff, #ff8ab6);
+  background: linear-gradient(90deg, #9b7cff, #ff8ab6);
   border-radius: 99px;
   transition: width 0.3s ease;
 }
@@ -195,18 +221,35 @@ const submitSurvey = () => {
 }
 
 .question-box {
-  min-height: 250px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: center;
   text-align: center;
   margin-bottom: 32px;
 }
+
+/* 상단 질문 전용 둥근 액자 이미지 컨테이너 */
+.question-image-wrapper {
+  width: 100%;
+  max-width: 440px;
+  height: 170px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  border: 1px solid #ebdff5;
+  box-shadow: 0 6px 16px rgba(24, 16, 40, 0.03);
+}
+.question-theme-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .question-title {
   font-size: 19px;
   font-weight: 700;
   color: #3b2a49;
-  margin-bottom: 28px;
+  margin: 0 0 24px;
   line-height: 1.4;
 }
 
@@ -218,14 +261,15 @@ const submitSurvey = () => {
   max-width: 440px;
   margin: 0 auto;
 }
+
 .option-card {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 15px 20px;
   border-radius: 16px;
-  border: 1px solid #e8dcf8;
+  border: 1px solid #dcd1f0; 
   background: #fbf8ff;
   color: #4f3a61;
   cursor: pointer;
@@ -237,7 +281,7 @@ const submitSurvey = () => {
 }
 .option-card:hover {
   background: #f5eeff;
-  border-color: #d1bbf4;
+  border-color: #b29de4;
 }
 
 .option-card.active {
@@ -249,7 +293,7 @@ const submitSurvey = () => {
 .radio-circle {
   width: 18px;
   height: 18px;
-  border: 2px solid #c0aee0;
+  border: 2px solid #b5a0e0;
   border-radius: 50%;
   position: relative;
   flex-shrink: 0;
