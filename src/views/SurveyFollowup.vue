@@ -6,7 +6,6 @@
         <p class="muted">여행 성향을 더 정확히 파악하기 위해 몇 가지 질문을 드립니다.</p>
       </header>
 
-      <!-- 📈 상단 진행률 프로그레스 바 -->
       <div class="progress-container">
         <div class="progress-bar-wrapper">
           <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
@@ -16,10 +15,8 @@
         </span>
       </div>
 
-      <!-- ❓ 현재 진행 단계의 단일 질문 박스 -->
       <div class="question-box">
-        
-        <!-- 🌟 로컬에서 로드한 질문 테마별 일러스트/사진 뷰어 -->
+
         <div class="question-image-wrapper">
           <img 
             :src="currentQuestion.image" 
@@ -43,7 +40,6 @@
         </div>
       </div>
 
-      <!-- 🧭 하단 이동 컨트롤 버튼 영역 -->
       <div class="navigation-buttons">
         <button class="btn-prev" @click="handlePrev">
           {{ currentStep === 0 ? '이전 단계' : '이전 질문' }}
@@ -64,8 +60,6 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-// 🌟 [추가] 로컬 에셋 폴더에서 직접 이미지를 안전하게 임포트합니다.
-// 확장자가 다를 경우(.png 등) 파일명 끝부분을 알맞게 수정해 주세요!
 import waitingImg from '../assets/images/waiting.jpg'
 import vibeImg from '../assets/images/vibe.jpg'
 import energyImg from '../assets/images/energy.jpg'
@@ -74,7 +68,6 @@ import placeTypeImg from '../assets/images/placeType.jpg'
 
 const router = useRouter()
 
-// 🌟 [수정] 외부 URL 대신 임포트한 로컬 이미지 변수명으로 변경 완료!
 const questions = [
   {
     id: 'waiting',
@@ -228,7 +221,6 @@ const submitSurvey = () => {
   margin-bottom: 32px;
 }
 
-/* 상단 질문 전용 둥근 액자 이미지 컨테이너 */
 .question-image-wrapper {
   width: 100%;
   max-width: 440px;

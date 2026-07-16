@@ -13,55 +13,66 @@
     </div>
 
     <div v-else class="card">
-      <header class="result-header">
-        <span class="badge">AI CUSTOM COURSE</span>
-        <h2>✨ AI가 설계한 나만의 서울 맞춤 여행 코스</h2>
-        <p class="muted">당신의 성향 설문 결과를 바탕으로 서울 공공데이터를 융합하여 특별한 코스를 설계했습니다.</p>
-      </header>
-
-      <div v-if="isLoading" class="loading-area">
-        <div class="spinner"></div>
-        <h3>AI 가이드가 최적의 여행 경로를 설계하고 있습니다...</h3>
-        <p class="muted">성향에 딱 맞는 명소, 액티비티, 숙박 및 쇼핑 정보를 조합하는 중입니다.</p>
+      
+      <div class="utility-bar" v-if="!isLoading">
+        <button @click="downloadCourseImage" class="btn-utility download-btn">
+          📸 이미지로 저장
+        </button>
+        <button @click="shareCourse" class="btn-utility share-btn">
+          📤 카톡 및 소셜 공유
+        </button>
       </div>
 
-      <div v-else>
-        <section class="map-section">
-          <LeafletMap 
-            :items="aiRecommendedPlaces" 
-            :active-item="selectedItem"
-            @select-item="handleMarkerClick"
-          />
-        </section>
+      <div id="capture-area" class="capture-box">
+        <header class="result-header">
+          <span class="badge">AI CUSTOM COURSE</span>
+          <h2>✨ AI가 설계한 나만의 서울 맞춤 여행 코스</h2>
+          <p class="muted">당신의 성향 설문 결과를 바탕으로 서울 공공데이터를 융합하여 특별한 하루 코스를 설계했습니다.</p>
+        </header>
 
-        <WeatherSummary :travel-info="travelInfo" />
+        <div v-if="isLoading" class="loading-area">
+          <div class="spinner"></div>
+          <h3>AI 가이드가 최적의 여행 경로를 설계하고 있습니다...</h3>
+          <p class="muted">성향에 딱 맞는 명소, 액티비티, 숙박 및 쇼핑 정보를 조합하는 중입니다.</p>
+        </div>
 
-        <section class="ai-report-card">
-          <h3 class="report-title">🤖 AI 가이드의 맞춤 코스 제안서</h3>
-          <p class="ai-text-content">{{ aiCoursePlan }}</p>
-        </section>
+        <div v-else>
+          <section class="map-section">
+            <LeafletMap 
+              :items="aiRecommendedPlaces" 
+              :active-item="selectedItem"
+              @select-item="handleMarkerClick"
+            />
+          </section>
 
-        <section class="places-section">
-          <h3 class="section-title">📌 코스 포함 명소 상세 정보</h3>
-          <div class="places-grid">
-            <article
-              v-for="place in aiRecommendedPlaces"
-              :key="place.id || place.title"
-              :ref="(el) => setCardRef(el, place.id || place.title)"
-              :class="['place-card', { 'active-neon': selectedItem?.title === place.title }]"
-              @click="focusOnMap(place)"
-            >
-              <div class="place-body">
-                <span class="category-tag">{{ getCategoryLabel(place.category) }}</span>
-                <h4 class="place-title">{{ place.title }}</h4>
-                <p class="place-addr" v-if="place.addr1">🚗 주소: {{ place.addr1 }}</p>
-                <p class="place-tel" v-if="place.tel">📞 문의: {{ place.tel }}</p>
-              </div>
-            </article>
-          </div>
-        </section>
+          <WeatherSummary :travel-info="travelInfo" />
+
+          <section class="ai-report-card">
+            <h3 class="report-title">🤖 AI 가이드의 맞춤 코스 제안서</h3>
+            <p class="ai-text-content">{{ aiCoursePlan }}</p>
+          </section>
+
+          <section class="places-section">
+            <h3 class="section-title">📌 코스 포함 명소 상세 정보</h3>
+            <div class="places-grid">
+              <article
+                v-for="place in aiRecommendedPlaces"
+                :key="place.id || place.title"
+                :ref="(el) => setCardRef(el, place.id || place.title)"
+                :class="['place-card', { 'active-neon': selectedItem?.title === place.title }]"
+                @click="focusOnMap(place)"
+              >
+                <div class="place-body">
+                  <span class="category-tag">{{ getCategoryLabel(place.category) }}</span>
+                  <h4 class="place-title">{{ place.title }}</h4>
+                  <p class="place-addr" v-if="place.addr1">🚗 주소: {{ place.addr1 }}</p>
+                  <p class="place-tel" v-if="place.tel">📞 문의: {{ place.tel }}</p>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
       </div>
-
       <div class="action-buttons" v-if="!isLoading">
         <button @click="retry" class="btn-retry">🔄 테스트 다시 하기</button>
         <button @click="goHome" class="btn-home">🏠 홈으로 가기</button>
@@ -71,11 +82,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, onBeforeUpdate, computed } from 'vue' 
+import { ref, onMounted, reactive, onBeforeUpdate } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useTourStore } from '../stores/tour' 
 import LeafletMap from '../components/LeafletMap.vue' 
-import WeatherSummary from '../components/WeatherSummary.vue'
+import WeatherSummary from '../components/WeatherSummary.vue' 
+
+// 🌟 [추가] 캡처 기능 라이브러리 임포트
+import html2canvas from 'html2canvas'
 
 const router = useRouter()
 const tourStore = useTourStore() 
@@ -84,7 +98,6 @@ const hasPrefs = ref(false)
 const isLoading = ref(true)
 const aiCoursePlan = ref('')
 const aiRecommendedPlaces = ref([])
-
 const travelInfo = ref({})
 
 const selectedItem = ref(null)
@@ -127,6 +140,7 @@ const checkPreferences = () => {
   }
 }
 
+// AI 추천 코스 빌딩 요청
 const generateAICourse = async (userPrefs) => {
   try {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -134,8 +148,8 @@ const generateAICourse = async (userPrefs) => {
       throw new Error('API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.')
     }
 
-    const rawSurveyData = localStorage.getItem('surveyData') //
-    const surveyData = rawSurveyData ? JSON.parse(rawSurveyData) : { //
+    const rawSurveyData = localStorage.getItem('surveyData') 
+    const surveyData = rawSurveyData ? JSON.parse(rawSurveyData) : { 
       stayText: '당일치기 여행',
       ageGroup: '20대',
       companion: '친구',
@@ -163,7 +177,7 @@ const generateAICourse = async (userPrefs) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: import.meta.env.VITE_OPENAI_MODEL,
+        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -242,6 +256,59 @@ const handleMarkerClick = (place) => {
   }
 }
 
+// 🌟 [새로 추가] html2canvas 이미지 저장 로직
+const downloadCourseImage = async () => {
+  const captureArea = document.getElementById('capture-area')
+  if (!captureArea) return
+
+  alert('📸 나만의 서울 여행 코스 이미지를 빌드하는 중입니다. 잠시만 기다려 주세요!')
+
+  try {
+    // 지도 타일 및 외부 기상 아이콘 깨짐 방지를 위해 useCORS 옵션을 꼭 켜줍니다.
+    const canvas = await html2canvas(captureArea, {
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#fbf9ff', // 투명 방지를 위해 아늑한 배경색으로 고정
+      scale: 2 // 이미지 해상도를 2배로 올려 출력 시 글씨가 깨지지 않고 아주 선명하게 해줍니다.
+    })
+
+    const imageUrl = canvas.toDataURL('image/png')
+    const link = document.createElement('a')
+    link.href = imageUrl
+    link.download = `seoul-course-${Date.now()}.png`
+    link.click()
+  } catch (error) {
+    console.error('이미지 빌딩 실패:', error)
+    alert('죄송합니다. 지도 타일 로딩 지연 등으로 이미지 저장에 실패했습니다. 다시 한 번 시도해 주세요!')
+  }
+}
+
+// 🌟 [새로 추가] 모바일/카카오톡 최적화 공유 로직 (Web Share API)
+const shareCourse = async () => {
+  const shareData = {
+    title: '🗺️ AI가 설계한 나만의 서울 맞춤 여행 코스',
+    text: '내 여행 성향 설문을 바탕으로 완벽한 하루 코스가 완성되었습니다! 확인하러 가기 ⬇️',
+    url: window.location.href
+  }
+
+  // 모바일 브라우저 환경인 경우 (카톡, 인스타 등 네이티브 공유 다이얼로그 즉시 활성화)
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData)
+    } catch (err) {
+      console.log('소셜 공유 취소 또는 중단됨', err)
+    }
+  } else {
+    // 데스크톱 크롬 등 Web Share 미지원 환경인 경우 링크 자동 복사 제공
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      alert('🔗 링크가 성공적으로 클립보드에 복사되었습니다!\n카카오톡 대화방에 붙여넣기(Ctrl+V)해서 친구에게 바로 공유해 보세요!')
+    } catch (err) {
+      alert('링크 복사에 실패했습니다. 주소창의 주소를 직접 복사해 주세요!')
+    }
+  }
+}
+
 onMounted(() => {
   if (checkPreferences()) {
     hasPrefs.value = true
@@ -310,7 +377,51 @@ const goHome = () => {
   margin-bottom: 20px;
 }
 
-.result-header { margin-bottom: 24px; }
+/* 🌟 [새로 추가] 상단 유틸리티 저장/공유 바 버튼 디자인 */
+.utility-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px dashed rgba(155, 124, 255, 0.15);
+  padding-bottom: 14px;
+}
+.btn-utility {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.download-btn {
+  background: rgba(155, 124, 255, 0.08);
+  color: #9b7cff;
+  border: 1px solid rgba(155, 124, 255, 0.15);
+}
+.download-btn:hover {
+  background: #9b7cff;
+  color: #ffffff;
+}
+.share-btn {
+  background: rgba(255, 138, 182, 0.08);
+  color: #ff8ab6;
+  border: 1px solid rgba(255, 138, 182, 0.15);
+}
+.share-btn:hover {
+  background: #ff8ab6;
+  color: #ffffff;
+}
+
+/* 🌟 [새로 추가] 캡처용 박스 패딩 세부 조절 */
+.capture-box {
+  padding: 10px;
+  border-radius: 16px;
+  background: transparent;
+}
+
+.result-header { margin-bottom: 24px; text-align: center; }
 .badge {
   display: inline-block;
   font-size: 11px;
