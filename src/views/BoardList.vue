@@ -6,12 +6,22 @@
     </div>
 
     <div class="card board-card">
-      <header class="board-header">
-        <span class="badge">COMMUNITY</span>
-        <h2>💬 여행자 광장</h2>
-        <p class="muted">서울을 여행하는 사람들의 생생한 후기와 정보 교환 공간입니다.</p>
-      </header>
+      <!-- 🌟 [수정] 여행자 광장 테마에 어울리는 활기차고 감성적인 서울 도심 여행자 배너로 교체 -->
+      <div class="board-hero">
+        <img 
+          src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1000&q=80" 
+          alt="Seoul Travel Plaza" 
+          class="hero-bg-img" 
+        />
+        <div class="hero-overlay"></div>
+        <div class="hero-text-content">
+          <span class="badge-hero">SEOUL TRAVEL HUB</span>
+          <h2>💬 여행자 광장</h2>
+          <p>서울을 누비는 여행자들의 생생한 발걸음과 꿀팁이 머무는 곳</p>
+        </div>
+      </div>
 
+      <!-- 📂 카테고리 탭 -->
       <div class="category-tabs">
         <button 
           v-for="tab in tabs" 
@@ -23,6 +33,7 @@
         </button>
       </div>
 
+      <!-- 📋 리스트 그리드 -->
       <div class="posts-grid" v-if="posts.length > 0">
         <article
           v-for="post in posts"
@@ -31,28 +42,44 @@
           class="post-card"
         >
           <div class="post-layout">
+            <!-- 🖼️ [수정] 사용자가 이미지를 직접 등록한 경우에만 썸네일 노출, 없을 때는 공간을 차지하지 않습니다. -->
             <div v-if="post.image" class="list-thumbnail-container">
-              <img :src="post.image" alt="썸네일" class="list-thumbnail" />
+              <img 
+                :src="post.image" 
+                alt="썸네일" 
+                class="list-thumbnail" 
+              />
             </div>
 
+            <!-- 정보 및 본문 영역 (썸네일이 없으면 카드를 넓게 꽉 채웁니다) -->
             <div class="post-body">
-              <span class="category-tag">{{ getCategoryLabel(post.category) }}</span>
+              <div class="post-top-info">
+                <span :class="['category-tag', post.category]">{{ getCategoryLabel(post.category) }}</span>
+                <span class="author-badge">👤 익명 여행자</span>
+              </div>
+              
               <h3 class="post-title">{{ post.title }}</h3>
-              <p class="post-excerpt">{{ truncateText(post.content, 80) }}</p>
-              <p class="post-meta">
-                📅 {{ formatDate(post.createdAt) }}
-              </p>
+              <p class="post-excerpt">{{ truncateText(post.content, 120) }}</p> <!-- 텍스트 공간이 넓어져 글자수 제한을 120자로 상향 -->
+              
+              <div class="post-meta-footer">
+                <span class="meta-item">📅 {{ formatDate(post.createdAt) }}</span>
+              </div>
             </div>
           </div>
         </article>
       </div>
 
+      <!-- 작성된 글이 없을 때 -->
       <div v-else class="empty-state">
-        <p class="muted">아직 이 카테고리에 작성된 게시글이 없습니다. 첫 번째 이야기를 들려주세요!</p>
+        <div class="empty-icon">📂</div>
+        <p class="muted">아직 이 카테고리에 작성된 게시글이 없습니다.<br>첫 번째 이야기의 주인공이 되어보세요!</p>
       </div>
 
+      <!-- 우측 하단 플로팅 글쓰기 버튼 -->
       <div class="write-action-container">
-        <button @click="goWrite" class="btn-write">✍️ 새 글 쓰기</button>
+        <button @click="goWrite" class="btn-write">
+          <span class="btn-icon">✍️</span> 새 글 쓰기
+        </button>
       </div>
     </div>
   </div>
@@ -65,10 +92,9 @@ import { storeToRefs } from 'pinia'
 import { useCommunityStore } from '../stores/community'
 
 const router = useRouter()
-const communityStore = useCommunityStore() //
+const communityStore = useCommunityStore()
 
 const { currentCategory } = storeToRefs(communityStore)
-
 const posts = computed(() => communityStore.filteredPosts)
 
 const tabs = [
@@ -82,12 +108,12 @@ const tabs = [
 ]
 
 const changeTab = (tabValue) => {
-  communityStore.setCategory(tabValue) //
+  communityStore.setCategory(tabValue)
 }
 
 const getCategoryLabel = (cat) => {
   const labels = { 
-    all: '전체',
+    all: '일반',
     attraction: '관광지', 
     culture: '문화/예술', 
     festival: '축제/행사', 
@@ -124,151 +150,239 @@ const goWrite = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 20px;
+  padding: 60px 20px;
   background: linear-gradient(180deg, #fff6fb 0%, #fffdf8 60%);
   position: relative;
   overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
-  color: var(--text);
+  color: #2f213f;
 }
 
 .blobs { position: absolute; inset: 0; pointer-events: none; }
-.blob { position: absolute; filter: blur(36px); opacity: 0.95; }
-.b1 { width: 360px; height: 360px; left: -80px; top: -60px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.4), transparent 40%); }
-.b2 { width: 280px; height: 280px; right: -60px; top: 40px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 40%); }
+.blob { position: absolute; filter: blur(40px); opacity: 0.9; }
+.b1 { width: 400px; height: 400px; left: -100px; top: -100px; background: radial-gradient(circle at 30% 30%, rgba(155,124,255,0.35), transparent 50%); }
+.b2 { width: 350px; height: 350px; right: -80px; top: 80px; background: radial-gradient(circle at 30% 30%, rgba(255,138,182,0.25), transparent 50%); }
 
 .card {
   width: 100%;
-  max-width: 750px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 22px;
-  padding: 32px;
-  box-shadow: 0 14px 40px rgba(24,16,40,0.08);
-  border: 1px solid rgba(155,124,255,0.08);
-  backdrop-filter: blur(6px);
+  max-width: 780px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 26px;
+  padding: 0 40px 40px; 
+  box-shadow: 0 16px 45px rgba(24,16,40,0.06);
+  border: 1px solid rgba(155,124,255,0.06);
+  backdrop-filter: blur(8px);
   position: relative;
   z-index: 2;
+  overflow: hidden;
 }
 
-.board-header { text-align: center; margin-bottom: 24px; }
-.badge {
+/* 상단 감성 여행 비주얼 배너 */
+.board-hero {
+  position: relative;
+  width: calc(100% + 80px);
+  margin-left: -40px;
+  height: 200px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(35, 23, 48, 0.1) 0%, rgba(35, 23, 48, 0.7) 100%);
+}
+.hero-text-content {
+  position: absolute;
+  bottom: 24px;
+  left: 40px;
+  right: 40px;
+  text-align: left;
+  color: #ffffff;
+}
+.badge-hero {
   display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  color: #9b7cff;
-  background: rgba(155, 124, 255, 0.08);
-  padding: 4px 12px;
-  border-radius: 999px;
-  margin-bottom: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  letter-spacing: 0.8px;
 }
-.board-header h2 { font-size: 26px; font-weight: 700; color: var(--text); margin: 0; }
-.muted { font-size: 13px; color: #736077; margin-top: 8px; }
+.hero-text-content h2 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.hero-text-content p {
+  font-size: 13px;
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 500;
+}
 
+/* 카테고리 탭 */
 .category-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 .tab-btn {
   background: #ffffff;
-  border: 1px solid rgba(155, 124, 255, 0.15);
-  color: #736077;
-  padding: 8px 16px;
+  border: 1px solid rgba(155, 124, 255, 0.12);
+  color: #615066;
+  padding: 9px 18px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(155, 124, 255, 0.02);
 }
 .tab-btn:hover, .tab-btn.active {
   background: linear-gradient(90deg, #9b7cff, #ff8ab6);
   color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 4px 12px rgba(155, 124, 255, 0.2);
+  box-shadow: 0 6px 16px rgba(155, 124, 255, 0.22);
+  transform: translateY(-1px);
 }
 
+/* 목록 카드 */
 .posts-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 18px;
+  margin-bottom: 28px;
 }
 .post-card {
   background: #ffffff;
-  border-radius: 14px;
-  padding: 18px;
-  border: 1px solid rgba(24,16,40,0.04);
-  box-shadow: 0 8px 24px rgba(24,16,40,0.03);
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid rgba(155, 124, 255, 0.06);
+  box-shadow: 0 6px 20px rgba(24,16,40,0.02);
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(155, 124, 255, 0.08);
-  border-color: rgba(155, 124, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(155, 124, 255, 0.09);
+  border-color: rgba(155, 124, 255, 0.18);
 }
 
-/* 이미지 레이아웃 */
 .post-layout {
   display: flex;
-  gap: 18px;
+  gap: 22px;
   align-items: center;
 }
+
+/* 썸네일 컨테이너 */
 .list-thumbnail-container {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
+  width: 95px;
+  height: 95px;
+  border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 .list-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.post-card:hover .list-thumbnail {
+  transform: scale(1.06);
 }
 
 .post-body {
   flex-grow: 1;
   text-align: left;
+  display: flex;
+  flex-direction: column;
 }
+
+.post-top-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* 카테고리별 전용 파스텔 컬러 코드칩 */
 .category-tag {
   display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  color: #ff8ab6;
-  background: rgba(255, 138, 182, 0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-bottom: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
-.post-title {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-.post-excerpt {
-  font-size: 13px;
-  color: #736077;
-  margin: 0 0 8px;
-  line-height: 1.4;
-}
-.post-meta {
-  font-size: 11px;
+.category-tag.all { color: #736077; background: #f0ecf2; }
+.category-tag.attraction { color: #2f66ff; background: rgba(47, 102, 255, 0.08); }
+.category-tag.culture { color: #9b7cff; background: rgba(155, 124, 255, 0.08); }
+.category-tag.festival { color: #ff7e42; background: rgba(255, 126, 66, 0.08); }
+.category-tag.sports { color: #10b981; background: rgba(16, 185, 129, 0.08); }
+.category-tag.accommodation { color: #ff5c75; background: rgba(255, 92, 117, 0.08); }
+.category-tag.shopping { color: #06b6d4; background: rgba(6, 182, 212, 0.08); }
+
+.author-badge {
+  font-size: 11.5px;
   color: #a394a8;
-  margin: 0;
+  font-weight: 500;
 }
 
+.post-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #231730;
+  margin: 0 0 6px;
+  transition: color 0.2s;
+}
+.post-card:hover .post-title {
+  color: #9b7cff;
+}
+
+.post-excerpt {
+  font-size: 13.5px;
+  color: #5e4f63;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.post-meta-footer {
+  display: flex;
+  align-items: center;
+  font-size: 11.5px;
+  color: #b5a9ba;
+}
+
+/* 비어있는 화면 */
 .empty-state {
-  padding: 48px 20px;
+  padding: 60px 20px;
   text-align: center;
-  border: 1px dashed rgba(155, 124, 255, 0.15);
-  border-radius: 14px;
-  margin-bottom: 24px;
+  border: 2px dashed rgba(155, 124, 255, 0.12);
+  border-radius: 20px;
+  margin-bottom: 28px;
+  background: rgba(155, 124, 255, 0.01);
+}
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.6;
 }
 
+/* 우하단 플로팅 글쓰기 버튼 */
 .write-action-container {
   display: flex;
   justify-content: flex-end;
@@ -277,15 +391,22 @@ const goWrite = () => {
   background: linear-gradient(90deg, #9b7cff, #ff8ab6);
   color: #ffffff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
+  padding: 13px 26px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14.5px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(155, 124, 255, 0.15);
-  transition: transform 200ms ease;
+  box-shadow: 0 8px 22px rgba(155, 124, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .btn-write:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 26px rgba(155, 124, 255, 0.35);
+}
+.btn-icon {
+  font-size: 16px;
 }
 </style>
