@@ -12,7 +12,7 @@
       <button @click="goToSurvey" class="btn-retry">🎯 설문지 작성하러 가기</button>
     </div>
 
-    <div v-else class="card">
+    <div class="card" v-else>
       
       <div class="utility-bar" v-if="!isLoading">
         <button @click="downloadCourseImage" class="btn-utility download-btn">
@@ -73,6 +73,7 @@
           </section>
         </div>
       </div>
+
       <div class="action-buttons" v-if="!isLoading">
         <button @click="retry" class="btn-retry">🔄 테스트 다시 하기</button>
         <button @click="goHome" class="btn-home">🏠 홈으로 가기</button>
@@ -87,7 +88,6 @@ import { useRouter } from 'vue-router'
 import { useTourStore } from '../stores/tour' 
 import LeafletMap from '../components/LeafletMap.vue' 
 import WeatherSummary from '../components/WeatherSummary.vue' 
-
 import html2canvas from 'html2canvas'
 
 const router = useRouter()
@@ -159,13 +159,26 @@ const generateAICourse = async (userPrefs) => {
       endDate: surveyData.endDate || ''
     }
 
+    const getCategoryList = (cat, limit) => {
+      const list = tourStore.tourData[cat] || []
+      return list.slice(0, limit).map(p => ({
+        title: p.title,
+        addr1: p.addr1,
+        mapx: p.mapx,
+        mapy: p.mapy,
+        tel: p.tel,
+        id: p.id,
+        category: p.category
+      }))
+    }
+
     const tourContext = {
-      attraction: tourStore.tourData.attraction.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
-      culture: tourStore.tourData.culture.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
-      festival: tourStore.tourData.festival.slice(0, 15).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
-      sports: tourStore.tourData.sports.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
-      accommodation: tourStore.tourData.accommodation.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id })),
-      shopping: tourStore.tourData.shopping.slice(0, 10).map(p => ({ title: p.title, addr1: p.addr1, mapx: p.mapx, mapy: p.mapy, tel: p.tel, id: p.id }))
+      attraction: getCategoryList('attraction', 15),
+      culture: getCategoryList('culture', 15),
+      festival: getCategoryList('festival', 15),
+      sports: getCategoryList('sports', 10),
+      accommodation: getCategoryList('accommodation', 10),
+      shopping: getCategoryList('shopping', 10)
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -184,14 +197,14 @@ const generateAICourse = async (userPrefs) => {
               사용자의 여행 기본 정보와 성향 프로필을 지능적으로 매칭 및 융합하여, 완벽한 연계 코스 일정표와 추천 장소 리스트를 JSON 형식으로 정확히 반환해야 합니다.
 
               [사용자의 여행 정보 및 성향]
-              - 여행 일정 요약: ${surveyData.stayText} (이에 맞춰 스케줄 분량을 오전/오후/저녁으로 영리하게 구성해 주세요)
-              - 나이대 및 동행인: ${surveyData.ageGroup}의 동행인 '${surveyData.companion}'과 함께하는 여행입니다. (동행인 분위기에 맞는 장소 배치가 중요합니다)
+              - 여행 일정 요약: ${surveyData.stayText}
+              - 나이대 및 동행인: ${surveyData.ageGroup}의 동행인 '${surveyData.companion}'과 함께하는 여행입니다.
               - 사용자의 MBTI: ${surveyData.mbti}
-              - 맛집 웨이팅 감수 여부: ${userPrefs.waiting} (YES면 인기가 많아 대기가 있어도 확실한 맛집, NO면 쾌적하고 조용한 숨은 강자 선호)
-              - 선호 식도락 분위기: ${userPrefs.vibe} (관광객 맛집 vs 로컬들만 아는 골목 맛집)
-              - 여행 시 활동 에너지량: ${userPrefs.energy} (2만 보 랜드마크 투어면 도보 동선이 풍성하고 알찬 스케줄, 5천 보 쉬엄쉬엄 여행이면 동선을 최소화하고 아늑한 쉼이 공존하는 일정)
-              - SNS 사용 정도: ${userPrefs.sns} (YES면 사진이 화려하고 뷰가 예쁜 포토존 명소 위주, NO면 실속 있고 편안한 전통 장소 중심)
-              - 선호 공간 스타일: ${userPrefs.placeType} (유명 관광지 vs 고즈넉하고 아기자기한 동네)
+              - 맛집 웨이팅 감수 여부: ${userPrefs.waiting}
+              - 선호 식도락 분위기: ${userPrefs.vibe}
+              - 여행 시 활동 에너지량: ${userPrefs.energy}
+              - SNS 사용 정도: ${userPrefs.sns}
+              - 선호 공간 스타일: ${userPrefs.placeType}
 
               [서울 공공데이터 소스]
               ${JSON.stringify(tourContext)}
@@ -230,7 +243,8 @@ const generateAICourse = async (userPrefs) => {
   } catch (error) {
     console.error(error)
     aiCoursePlan.value = "⚠️ 죄송합니다. 여행 설문 결과를 동적으로 융합하는 중 통신 지연이 발생했습니다. 아래에서 기본 추천 명소들을 대신 확인해 보세요!"
-    aiRecommendedPlaces.value = tourStore.tourData.attraction.slice(0, 5) 
+    const fallbackList = Object.values(tourStore.tourData).flat()
+    aiRecommendedPlaces.value = fallbackList.slice(0, 5) 
   } finally {
     isLoading.value = false
   }
